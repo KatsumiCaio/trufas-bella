@@ -1,19 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAuthenticated() {
-      return request.auth != null;
+    match /shops/trufas_bella/orders/{orderId} {
+      allow read, write: if true;
     }
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    match /users/{userId}/orders/{orderId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    match /users/{userId}/flavors/{flavorId} {
-      allow read, write: if isOwner(userId);
+    match /shops/trufas_bella/flavors/{flavorId} {
+      allow read, write: if true;
     }
   }
 }

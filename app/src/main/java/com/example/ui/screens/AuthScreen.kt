@@ -18,21 +18,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import kotlinx.coroutines.launch
 
 @Composable
 fun AuthScreen(onAuthSuccess: () -> Unit) {
     var pin by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val coroutineScope = rememberCoroutineScope()
 
     val targetPin = "310319"
-    val backgroundEmail = "trufas.bella@app.com"
-    val backgroundPassword = "password310316" // Firebase requires >= 6 chars
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -115,53 +108,19 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
                     Button(
                         onClick = {
                             if (pin == targetPin) {
-                                isLoading = true
                                 errorMessage = null
-                                coroutineScope.launch {
-                                    try {
-                                        val auth = Firebase.auth
-                                        auth.signInWithEmailAndPassword(backgroundEmail, backgroundPassword)
-                                            .addOnCompleteListener { task ->
-                                                if (task.isSuccessful) {
-                                                    isLoading = false
-                                                    onAuthSuccess()
-                                                } else {
-                                                    // Account may not exist yet, create it
-                                                    auth.createUserWithEmailAndPassword(backgroundEmail, backgroundPassword)
-                                                        .addOnCompleteListener { createParam ->
-                                                            isLoading = false
-                                                            if (createParam.isSuccessful) {
-                                                                onAuthSuccess()
-                                                            } else {
-                                                                errorMessage = "Erro ao conectar: ${createParam.exception?.localizedMessage}"
-                                                            }
-                                                        }
-                                                }
-                                            }
-                                    } catch (e: Exception) {
-                                        isLoading = false
-                                        errorMessage = e.localizedMessage ?: "Erro ao autenticar"
-                                    }
-                                }
+                                onAuthSuccess()
                             } else {
                                 errorMessage = "Senha incorreta. A senha correta possui 6 dígitos."
                             }
                         },
-                        enabled = !isLoading && pin.length == 6,
+                        enabled = pin.length == 6,
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("auth_login_button"),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Text("Entrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        }
+                        Text("Entrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

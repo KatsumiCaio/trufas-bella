@@ -1,7 +1,7 @@
 {
   "entities": {
     "Order": {
-      "path": "users/{userId}/orders/{orderId}",
+      "path": "shops/trufas_bella/orders/{orderId}",
       "schema": {
         "userId": "string",
         "clientName": "string",
@@ -21,7 +21,7 @@
       }
     },
     "Flavor": {
-      "path": "users/{userId}/flavors/{flavorId}",
+      "path": "shops/trufas_bella/flavors/{flavorId}",
       "schema": {
         "userId": "string",
         "name": "string",

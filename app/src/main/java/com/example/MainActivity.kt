@@ -24,9 +24,6 @@ import com.example.ui.screens.ReceiptsScreen
 import com.example.ui.screens.ReportsScreen
 import com.example.ui.theme.TrufasBellaTheme
 import com.example.ui.viewmodel.OrderViewModel
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
 
 class MainActivity : ComponentActivity() {
     private val viewModel: OrderViewModel by viewModels()
@@ -36,21 +33,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TrufasBellaTheme {
-                var currentUser by remember { mutableStateOf(Firebase.auth.currentUser) }
+                var isUnlocked by remember { mutableStateOf(false) }
 
-                DisposableEffect(Unit) {
-                    val listener = FirebaseAuth.AuthStateListener { auth ->
-                        currentUser = auth.currentUser
-                    }
-                    Firebase.auth.addAuthStateListener(listener)
-                    onDispose {
-                        Firebase.auth.removeAuthStateListener(listener)
-                    }
-                }
-
-                if (currentUser == null) {
+                if (!isUnlocked) {
                     AuthScreen(onAuthSuccess = {
-                        currentUser = Firebase.auth.currentUser
+                        isUnlocked = true
                     })
                 } else {
                     var selectedTab by remember { mutableIntStateOf(0) }
