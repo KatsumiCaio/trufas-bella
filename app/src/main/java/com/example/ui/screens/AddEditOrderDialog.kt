@@ -17,14 +17,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.data.OrderEntity
+import com.example.data.OrderModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditOrderDialog(
-    orderToEdit: OrderEntity? = null,
+    orderToEdit: OrderModel? = null,
     onDismiss: () -> Unit,
     onSave: (
         clientName: String,
@@ -82,7 +81,6 @@ fun AddEditOrderDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Title
                 Text(
                     text = if (orderToEdit == null) "Nova Encomenda" else "Editar Encomenda",
                     style = MaterialTheme.typography.titleLarge,
@@ -90,7 +88,6 @@ fun AddEditOrderDialog(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                // Client Name
                 OutlinedTextField(
                     value = clientName,
                     onValueChange = { clientName = it },
@@ -102,7 +99,6 @@ fun AddEditOrderDialog(
                         .testTag("client_name_input")
                 )
 
-                // Flavors Counters
                 Text("Sabores de Trufas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
 
                 FlavorCounterRow("Brigadeiro (R$ $simplePrice)", brigadeiro) { brigadeiro = it }
@@ -114,7 +110,6 @@ fun AddEditOrderDialog(
 
                 Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                // Prices customization toggle or inputs
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -135,7 +130,6 @@ fun AddEditOrderDialog(
                     )
                 }
 
-                // Payment Method & Status
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -186,7 +180,6 @@ fun AddEditOrderDialog(
                     }
                 }
 
-                // Notes
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
@@ -195,7 +188,6 @@ fun AddEditOrderDialog(
                     maxLines = 3
                 )
 
-                // Live Summary Card
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.primaryContainer,
@@ -219,7 +211,6 @@ fun AddEditOrderDialog(
                     }
                 }
 
-                // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,

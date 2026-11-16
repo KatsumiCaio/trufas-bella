@@ -1,0 +1,24 @@
+{
+  "entities": {
+    "Order": {
+      "path": "users/{userId}/orders/{orderId}",
+      "schema": {
+        "userId": "string",
+        "clientName": "string",
+        "brigadeiro": "number",
+        "pacoca": "number",
+        "ninho": "number",
+        "ninhoNutella": "number",
+        "maracuja": "number",
+        "outro": "number",
+        "unitPriceSimple": "number",
+        "unitPriceSpecial": "number",
+        "paymentMethod": "string",
+        "isPaid": "boolean",
+        "notes": "string",
+        "dateMillis": "number",
+        "createdAt": "string"
+      }
+    }
+  }
+}

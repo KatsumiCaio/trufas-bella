@@ -3,12 +3,10 @@ package com.example.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,13 +14,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.data.OrderEntity
+import com.example.data.OrderModel
 import com.example.ui.viewmodel.OrderViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +26,7 @@ import com.example.ui.viewmodel.OrderViewModel
 fun OrdersScreen(
     viewModel: OrderViewModel,
     onAddNewClick: () -> Unit,
-    onEditOrder: (OrderEntity) -> Unit
+    onEditOrder: (OrderModel) -> Unit
 ) {
     val orders by viewModel.allOrders.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
@@ -90,7 +86,6 @@ fun OrdersScreen(
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Summary Dashboard Header Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,7 +122,6 @@ fun OrdersScreen(
                 }
             }
 
-            // Search Bar & Filters
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 OutlinedTextField(
                     value = searchQuery,
@@ -164,7 +158,6 @@ fun OrdersScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // List of Orders
             if (filteredOrders.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -211,7 +204,7 @@ fun OrdersScreen(
 
 @Composable
 fun OrderItemCard(
-    order: OrderEntity,
+    order: OrderModel,
     onTogglePaid: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -219,7 +212,7 @@ fun OrderItemCard(
 ) {
     val flavorsText = buildString {
         val list = mutableListOf<String>()
-        if (order.brigadeiro >  0) list.add("${order.brigadeiro} Brig.")
+        if (order.brigadeiro > 0) list.add("${order.brigadeiro} Brig.")
         if (order.pacoca > 0) list.add("${order.pacoca} Paç.")
         if (order.ninho > 0) list.add("${order.ninho} Ninho")
         if (order.ninhoNutella > 0) list.add("${order.ninhoNutella} Ninho+Nut.")
@@ -239,7 +232,6 @@ fun OrderItemCard(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header: Client Name & Payment Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -252,25 +244,22 @@ fun OrderItemCard(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (order.isPaid) Color(0xFFE8F5E9) else Color(0xFFFFF3E1)
-                    ) {
-                        Text(
-                            text = if (order.isPaid) "PAGO (${order.paymentMethod})" else "PENDENTE",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = if (order.isPaid) Color(0xFF2E7D32) else Color(0xFFE65100),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (order.isPaid) Color(0xFFE8F5E9) else Color(0xFFFFF3E1)
+                ) {
+                    Text(
+                        text = if (order.isPaid) "PAGO (${order.paymentMethod})" else "PENDENTE",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (order.isPaid) Color(0xFF2E7D32) else Color(0xFFE65100),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Flavors description
             Text(
                 text = flavorsText,
                 style = MaterialTheme.typography.bodyMedium,
@@ -291,7 +280,6 @@ fun OrderItemCard(
             Divider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Footer: Qty, Total Price & Actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -303,11 +291,9 @@ fun OrderItemCard(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    // WhatsApp share button
                     IconButton(onClick = onWhatsAppShare, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.Share, contentDescription = "Compartilhar WhatsApp", tint = Color(0xFF25D366))
                     }
-                    // Toggle paid status
                     IconButton(onClick = onTogglePaid, modifier = Modifier.size(36.dp)) {
                         Icon(
                             if (order.isPaid) Icons.Default.MoneyOff else Icons.Default.CheckCircle,
@@ -315,11 +301,9 @@ fun OrderItemCard(
                             tint = if (order.isPaid) MaterialTheme.colorScheme.outline else Color(0xFF2E7D32)
                         )
                     }
-                    // Edit
                     IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.secondary)
                     }
-                    // Delete
                     IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                         Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = MaterialTheme.colorScheme.error)
                     }
@@ -329,7 +313,7 @@ fun OrderItemCard(
     }
 }
 
-fun shareOnWhatsApp(context: Context, order: OrderEntity) {
+fun shareOnWhatsApp(context: Context, order: OrderModel) {
     val flavorsList = buildString {
         if (order.brigadeiro > 0) append("${order.brigadeiro} Brigadeiro, ")
         if (order.pacoca > 0) append("${order.pacoca} Paçoca, ")

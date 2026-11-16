@@ -3,9 +3,8 @@ package com.example.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.AppDatabase
-import com.example.data.OrderEntity
-import com.example.data.OrderRepository
+import com.example.data.FirestoreRepository
+import com.example.data.OrderModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -15,19 +14,14 @@ import java.util.Date
 import java.util.Locale
 
 class OrderViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: OrderRepository
+    private val repository = FirestoreRepository(application)
 
-    val allOrders: StateFlow<List<OrderEntity>>
-
-    init {
-        val orderDao = AppDatabase.getDatabase(application).orderDao()
-        repository = OrderRepository(orderDao)
-        allOrders = repository.allOrders.stateIn(
+    val allOrders: StateFlow<List<OrderModel>> = repository.observeOrders()
+        .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
-    }
 
     fun insertOrder(
         clientName: String,
@@ -46,8 +40,8 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
             val formattedDate = dateFormat.format(Date())
-            val order = OrderEntity(
-                clientName = clientName.trim().uppercase(),
+            repository.addOrder(
+                clientName = clientName,
                 brigadeiro = brigadeiro,
                 pacoca = pacoca,
                 ninho = ninho,
@@ -59,22 +53,20 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                 paymentMethod = paymentMethod,
                 isPaid = isPaid,
                 notes = notes,
-                dateMillis = System.currentTimeMillis(),
                 createdAt = formattedDate
             )
-            repository.insert(order)
         }
     }
 
-    fun updateOrder(order: OrderEntity) {
+    fun updateOrder(order: OrderModel) {
         viewModelScope.launch {
-            repository.update(order)
+            repository.updateOrder(order)
         }
     }
 
-    fun deleteOrder(order: OrderEntity) {
+    fun deleteOrder(order: OrderModel) {
         viewModelScope.launch {
-            repository.delete(order)
+            repository.deleteOrder(order)
         }
     }
 
@@ -83,12 +75,28 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
             val today = dateFormat.format(Date())
             val sample = listOf(
-                OrderEntity(clientName = "BRUNO", brigadeiro = 3, ninho = 2, outro = 1, paymentMethod = "PIX", isPaid = true, notes = "Pagou via PIX", createdAt = today),
-                OrderEntity(clientName = "DOUGLAS", pacoca = 4, ninhoNutella = 2, maracuja = 3, paymentMethod = "Dinheiro", isPaid = true, notes = "Entregue no trabalho", createdAt = today),
-                OrderEntity(clientName = "MARIANA", brigadeiro = 2, ninho = 4, paymentMethod = "Pendente", isPaid = false, notes = "Vai pagar semana que vem", createdAt = today),
-                OrderEntity(clientName = "CAMILA", ninhoNutella = 3, pacoca = 2, paymentMethod = "PIX", isPaid = true, notes = "Pix ok", createdAt = today)
+                OrderModel(clientName = "BRUNO", brigadeiro = 3, ninho = 2, outro = 1, paymentMethod = "PIX", isPaid = true, notes = "Pagou via PIX", createdAt = today),
+                OrderModel(clientName = "DOUGLAS", pacoca = 4, ninhoNutella = 2, maracuja = 3, paymentMethod = "Dinheiro", isPaid = true, notes = "Entregue no trabalho", createdAt = today),
+                OrderModel(clientName = "MARIANA", brigadeiro = 2, ninho = 4, paymentMethod = "Pendente", isPaid = false, notes = "Vai pagar semana que vem", createdAt = today),
+                OrderModel(clientName = "CAMILA", ninhoNutella = 3, pacoca = 2, paymentMethod = "PIX", isPaid = true, notes = "Pix ok", createdAt = today)
             )
-            sample.forEach { repository.insert(it) }
+            sample.forEach {
+                repository.addOrder(
+                    clientName = it.clientName,
+                    brigadeiro = it.brigadeiro,
+                    pacoca = it.pacoca,
+                    ninho = it.ninho,
+                    ninhoNutella = it.ninhoNutella,
+                    maracuja = it.maracuja,
+                    outro = it.outro,
+                    unitPriceSimple = it.unitPriceSimple,
+                    unitPriceSpecial = it.unitPriceSpecial,
+                    paymentMethod = it.paymentMethod,
+                    isPaid = it.isPaid,
+                    notes = it.notes,
+                    createdAt = it.createdAt
+                )
+            }
         }
     }
 }

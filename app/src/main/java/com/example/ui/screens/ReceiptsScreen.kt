@@ -20,8 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.data.OrderEntity
+import com.example.data.OrderModel
 import com.example.ui.viewmodel.OrderViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,7 +82,7 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
 
 @Composable
 fun ReceiptCard(
-    order: OrderEntity,
+    order: OrderModel,
     onShare: () -> Unit,
     onCopy: () -> Unit
 ) {
@@ -110,7 +109,6 @@ fun ReceiptCard(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Header Tag Title
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -129,7 +127,6 @@ fun ReceiptCard(
                 )
             }
 
-            // Client Name in Big Bold Letters
             Text(
                 text = order.clientName,
                 style = MaterialTheme.typography.headlineMedium,
@@ -139,14 +136,12 @@ fun ReceiptCard(
 
             Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            // Flavors description
             Text(
                 text = flavorsText.ifBlank { "Nenhum sabor especificado" },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            // Quantity & Total Price Highlight
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
@@ -173,7 +168,6 @@ fun ReceiptCard(
                 }
             }
 
-            // PIX Key Box
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = Color(0xFFE3F2FD),
@@ -198,7 +192,6 @@ fun ReceiptCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -226,7 +219,7 @@ fun ReceiptCard(
     }
 }
 
-fun buildReceiptText(order: OrderEntity): String {
+fun buildReceiptText(order: OrderModel): String {
     val flavorsList = buildString {
         if (order.brigadeiro > 0) append("${order.brigadeiro} Brigadeiro, ")
         if (order.pacoca > 0) append("${order.pacoca} Paçoca, ")
