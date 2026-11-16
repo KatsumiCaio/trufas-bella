@@ -1,40 +1,38 @@
 package com.example.ui.screens
 
-import android.app.Activity
-import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import com.example.R
-import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.Firebase
-import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 @Composable
 fun AuthScreen(onAuthSuccess: () -> Unit) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
+    var pin by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val targetPin = "310316"
+    val backgroundEmail = "trufas.bella@app.com"
+    val backgroundPassword = "password310316" // Firebase requires >= 6 chars
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -74,7 +72,7 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
                     )
 
                     Text(
-                        text = "Faça login com sua conta Google para sincronizar suas encomendas e relatórios na nuvem.",
+                        text = "Digite a senha de 6 dígitos para acessar o sistema.",
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -94,30 +92,65 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = pin,
+                        onValueChange = { if (it.length <= 6) pin = it },
+                        label = { Text("Senha (6 dígitos)") },
+                        singleLine = true,
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        trailingIcon = {
+                            val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(image, contentDescription = if (passwordVisible) "Ocultar senha" else "Mostrar senha")
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("auth_pin_input")
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     Button(
                         onClick = {
-                            isLoading = true
-                            errorMessage = null
-                            signInWithGoogle(
-                                context = context,
-                                scope = coroutineScope,
-                                onSuccess = {
-                                    isLoading = false
-                                    onAuthSuccess()
-                                },
-                                onError = { msg ->
-                                    isLoading = false
-                                    errorMessage = msg
-                                },
-                                onCancelled = {
-                                    isLoading = false
+                            if (pin == targetPin) {
+                                isLoading = true
+                                errorMessage = null
+                                coroutineScope.launch {
+                                    try {
+                                        val auth = Firebase.auth
+                                        auth.signInWithEmailAndPassword(backgroundEmail, backgroundPassword)
+                                            .addOnCompleteListener { task ->
+                                                if (task.isSuccessful) {
+                                                    isLoading = false
+                                                    onAuthSuccess()
+                                                } else {
+                                                    // Account may not exist yet, create it
+                                                    auth.createUserWithEmailAndPassword(backgroundEmail, backgroundPassword)
+                                                        .addOnCompleteListener { createParam ->
+                                                            isLoading = false
+                                                            if (createParam.isSuccessful) {
+                                                                onAuthSuccess()
+                                                            } else {
+                                                                errorMessage = "Erro ao conectar: ${createParam.exception?.localizedMessage}"
+                                                            }
+                                                        }
+                                                }
+                                            }
+                                    } catch (e: Exception) {
+                                        isLoading = false
+                                        errorMessage = e.localizedMessage ?: "Erro ao autenticar"
+                                    }
                                 }
-                            )
+                            } else {
+                                errorMessage = "Senha incorreta. A senha correta possui 6 dígitos."
+                            }
                         },
-                        enabled = !isLoading,
-                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading && pin.length == 6,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("auth_login_button"),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         if (isLoading) {
@@ -127,51 +160,11 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Entrar com Google", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text("Entrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-fun signInWithGoogle(
-    context: Context,
-    scope: CoroutineScope,
-    onSuccess: () -> Unit,
-    onError: (String) -> Unit,
-    onCancelled: () -> Unit
-) {
-    val clientId = try {
-        context.getString(R.string.default_web_client_id)
-    } catch (e: Exception) {
-        onError("Client ID não encontrado: ${e.localizedMessage}")
-        return
-    }
-
-    val credentialManager = CredentialManager.create(context)
-    val signInOption = GetSignInWithGoogleOption.Builder(serverClientId = clientId).build()
-    val request = GetCredentialRequest.Builder().addCredentialOption(signInOption).build()
-
-    scope.launch {
-        try {
-            val result = credentialManager.getCredential(context as Activity, request)
-            val credential = result.credential
-            if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
-                val authCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-                Firebase.auth.signInWithCredential(authCredential).await()
-                onSuccess()
-            } else {
-                onError("Tipo de credencial inválido")
-            }
-        } catch (e: GetCredentialCancellationException) {
-            Log.w("Auth", "Login cancelado: ${e.message}")
-            onCancelled()
-        } catch (e: Exception) {
-            Log.e("Auth", "Erro no login Google", e)
-            onError(e.localizedMessage ?: "Falha ao autenticar")
         }
     }
 }
