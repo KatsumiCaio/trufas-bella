@@ -3,6 +3,7 @@ package com.example.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.FlavorModel
 import com.example.data.FirestoreRepository
 import com.example.data.OrderModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,6 +18,13 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = FirestoreRepository(application)
 
     val allOrders: StateFlow<List<OrderModel>> = repository.observeOrders()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val allFlavors: StateFlow<List<FlavorModel>> = repository.observeFlavors()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -67,6 +75,24 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteOrder(order: OrderModel) {
         viewModelScope.launch {
             repository.deleteOrder(order)
+        }
+    }
+
+    fun addFlavor(name: String, price: Double, isSpecial: Boolean) {
+        viewModelScope.launch {
+            repository.addFlavor(name, price, isSpecial)
+        }
+    }
+
+    fun updateFlavor(flavor: FlavorModel) {
+        viewModelScope.launch {
+            repository.updateFlavor(flavor)
+        }
+    }
+
+    fun deleteFlavor(flavor: FlavorModel) {
+        viewModelScope.launch {
+            repository.deleteFlavor(flavor)
         }
     }
 

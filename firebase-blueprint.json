@@ -19,6 +19,15 @@
         "dateMillis": "number",
         "createdAt": "string"
       }
+    },
+    "Flavor": {
+      "path": "users/{userId}/flavors/{flavorId}",
+      "schema": {
+        "userId": "string",
+        "name": "string",
+        "price": "number",
+        "isSpecial": "boolean"
+      }
     }
   }
 }

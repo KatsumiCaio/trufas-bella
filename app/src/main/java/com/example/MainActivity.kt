@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import com.example.data.OrderModel
 import com.example.ui.screens.AddEditOrderDialog
 import com.example.ui.screens.AuthScreen
+import com.example.ui.screens.FlavorsScreen
 import com.example.ui.screens.OrdersScreen
 import com.example.ui.screens.ReceiptsScreen
 import com.example.ui.screens.ReportsScreen
@@ -71,12 +73,18 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = selectedTab == 1,
                                     onClick = { selectedTab = 1 },
-                                    icon = { Icon(Icons.Default.Receipt, contentDescription = "Recibos") },
-                                    label = { Text("Recibos") }
+                                    icon = { Icon(Icons.Default.Category, contentDescription = "Sabores") },
+                                    label = { Text("Sabores") }
                                 )
                                 NavigationBarItem(
                                     selected = selectedTab == 2,
                                     onClick = { selectedTab = 2 },
+                                    icon = { Icon(Icons.Default.Receipt, contentDescription = "Recibos") },
+                                    label = { Text("Recibos") }
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == 3,
+                                    onClick = { selectedTab = 3 },
                                     icon = { Icon(Icons.Default.BarChart, contentDescription = "Relatórios") },
                                     label = { Text("Relatórios") }
                                 )
@@ -101,8 +109,9 @@ class MainActivity : ComponentActivity() {
                                         showAddDialog = true
                                     }
                                 )
-                                1 -> ReceiptsScreen(viewModel = viewModel)
-                                2 -> ReportsScreen(viewModel = viewModel)
+                                1 -> FlavorsScreen(viewModel = viewModel)
+                                2 -> ReceiptsScreen(viewModel = viewModel)
+                                3 -> ReportsScreen(viewModel = viewModel)
                             }
                         }
 
