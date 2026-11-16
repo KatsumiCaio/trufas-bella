@@ -96,6 +96,12 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun seedDefaultFlavors() {
+        viewModelScope.launch {
+            repository.seedDefaultFlavors()
+        }
+    }
+
     fun seedInitialData() {
         viewModelScope.launch {
             val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))

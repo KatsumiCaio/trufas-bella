@@ -3,12 +3,9 @@ package com.example.data
 import android.content.Context
 import com.example.R
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class FirestoreRepository(private val context: Context) {
@@ -91,20 +88,14 @@ class FirestoreRepository(private val context: Context) {
             }
             if (snapshot != null) {
                 val list = snapshot.toObjects(FlavorModel::class.java)
-                if (list.isEmpty()) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        seedDefaultFlavors()
-                    }
-                } else {
-                    trySend(list)
-                }
+                trySend(list)
             }
         }
 
         awaitClose { listener.remove() }
     }
 
-    private suspend fun seedDefaultFlavors() {
+    suspend fun seedDefaultFlavors() {
         val defaults = listOf(
             FlavorModel(name = "Brigadeiro", price = 7.0, isSpecial = false),
             FlavorModel(name = "Paçoca", price = 7.0, isSpecial = false),

@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.FlavorModel
@@ -33,6 +32,13 @@ fun FlavorsScreen(
                     Column {
                         Text("Sabores e Valores", fontWeight = FontWeight.Bold)
                         Text("Gerencie o cardápio e preços das trufas", style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                actions = {
+                    if (flavors.isEmpty()) {
+                        IconButton(onClick = { viewModel.seedDefaultFlavors() }) {
+                            Icon(Icons.Default.CloudDownload, contentDescription = "Carregar Sabores Padrão")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -71,14 +77,21 @@ fun FlavorsScreen(
                         Icon(Icons.Default.RestaurantMenu, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Nenhum sabor cadastrado", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            flavorToEdit = null
-                            showDialog = true
-                        }) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Adicionar Primeiro Sabor")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { viewModel.seedDefaultFlavors() }) {
+                                Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Carregar Padrões")
+                            }
+                            OutlinedButton(onClick = {
+                                flavorToEdit = null
+                                showDialog = true
+                            }) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Criar Novo")
+                            }
                         }
                     }
                 }
