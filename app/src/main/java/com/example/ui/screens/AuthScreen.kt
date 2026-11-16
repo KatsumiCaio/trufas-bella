@@ -30,7 +30,7 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
-    val targetPin = "310316"
+    val targetPin = "310319"
     val backgroundEmail = "trufas.bella@app.com"
     val backgroundPassword = "password310316" // Firebase requires >= 6 chars
 
