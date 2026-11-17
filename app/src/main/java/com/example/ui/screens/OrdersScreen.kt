@@ -18,8 +18,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.util.Calendar
+import java.util.Locale
 import com.example.data.OrderModel
 import com.example.ui.viewmodel.OrderViewModel
+
+fun isCurrentWeek(dateMillis: Long): Boolean {
+    val calOrder = Calendar.getInstance(Locale("pt", "BR")).apply { timeInMillis = dateMillis }
+    val calNow = Calendar.getInstance(Locale("pt", "BR"))
+    return calOrder.get(Calendar.WEEK_OF_YEAR) == calNow.get(Calendar.WEEK_OF_YEAR) &&
+           calOrder.get(Calendar.YEAR) == calNow.get(Calendar.YEAR)
+}
+
+fun isCurrentMonth(dateMillis: Long): Boolean {
+    val calOrder = Calendar.getInstance(Locale("pt", "BR")).apply { timeInMillis = dateMillis }
+    val calNow = Calendar.getInstance(Locale("pt", "BR"))
+    return calOrder.get(Calendar.MONTH) == calNow.get(Calendar.MONTH) &&
+           calOrder.get(Calendar.YEAR) == calNow.get(Calendar.YEAR)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,23 +46,40 @@ fun OrdersScreen(
 ) {
     val orders by viewModel.allOrders.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Todos") } // Todos, Pendentes, Pagos
+    var selectedPeriod by remember { mutableStateOf("Esta Semana") } // "Esta Semana", "Este Mês", "Todas"
+    var selectedStatus by remember { mutableStateOf("Todos") } // "Todos", "Pendentes", "Pagos"
     val context = LocalContext.current
 
     val filteredOrders = orders.filter { order ->
         val matchesSearch = order.clientName.contains(searchQuery, ignoreCase = true) ||
                 order.notes.contains(searchQuery, ignoreCase = true)
-        val matchesFilter = when (selectedFilter) {
+        
+        val matchesPeriod = when (selectedPeriod) {
+            "Esta Semana" -> isCurrentWeek(order.dateMillis)
+            "Este Mês" -> isCurrentMonth(order.dateMillis)
+            else -> true
+        }
+
+        val matchesStatus = when (selectedStatus) {
             "Pendentes" -> !order.isPaid
             "Pagos" -> order.isPaid
             else -> true
         }
-        matchesSearch && matchesFilter
+
+        matchesSearch && matchesPeriod && matchesStatus
     }
 
-    val totalRevenue = orders.sumOf { it.totalPrice }
-    val totalTruffles = orders.sumOf { it.totalQuantity }
-    val pendingCount = orders.count { !it.isPaid }
+    val periodFilteredOrders = orders.filter { order ->
+        when (selectedPeriod) {
+            "Esta Semana" -> isCurrentWeek(order.dateMillis)
+            "Este Mês" -> isCurrentMonth(order.dateMillis)
+            else -> true
+        }
+    }
+
+    val totalRevenue = periodFilteredOrders.sumOf { it.totalPrice }
+    val totalTruffles = periodFilteredOrders.sumOf { it.totalQuantity }
+    val pendingCount = periodFilteredOrders.count { !it.isPaid }
 
     Scaffold(
         topBar = {
@@ -142,15 +175,34 @@ fun OrdersScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                Text("Período:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("Todos", "Pendentes", "Pagos").forEach { filter ->
+                    listOf("Esta Semana", "Este Mês", "Todas").forEach { period ->
                         FilterChip(
-                            selected = selectedFilter == filter,
-                            onClick = { selectedFilter = filter },
-                            label = { Text(filter) }
+                            selected = selectedPeriod == period,
+                            onClick = { selectedPeriod = period },
+                            label = { Text(period) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Status:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Todos", "Pendentes", "Pagos").forEach { status ->
+                        FilterChip(
+                            selected = selectedStatus == status,
+                            onClick = { selectedStatus = status },
+                            label = { Text(status) }
                         )
                     }
                 }
