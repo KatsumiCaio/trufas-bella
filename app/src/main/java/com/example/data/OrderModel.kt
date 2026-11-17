@@ -7,12 +7,8 @@ data class OrderModel(
     val id: String = "",
     val userId: String = "",
     val clientName: String = "",
-    val brigadeiro: Int = 0,
-    val pacoca: Int = 0,
-    val ninho: Int = 0,
-    val ninhoNutella: Int = 0,
-    val maracuja: Int = 0,
-    val outro: Int = 0,
+    val flavorQuantities: Map<String, Int> = emptyMap(), // flavorName -> quantity
+    val totalPrice: Double = 0.0,
     val unitPriceSimple: Double = 7.0,
     val unitPriceSpecial: Double = 8.0,
     val paymentMethod: String = "PIX",
@@ -22,12 +18,23 @@ data class OrderModel(
     val createdAt: String = ""
 ) {
     val totalQuantity: Int
-        get() = brigadeiro + pacoca + ninho + ninhoNutella + maracuja + outro
+        get() = flavorQuantities.values.sum()
 
-    val totalPrice: Double
-        get() {
-            val simpleCount = brigadeiro + pacoca + ninho + maracuja + outro
-            val specialCount = ninhoNutella
-            return (simpleCount * unitPriceSimple) + (specialCount * unitPriceSpecial)
-        }
+    val brigadeiro: Int
+        get() = flavorQuantities["Brigadeiro"] ?: 0
+
+    val pacoca: Int
+        get() = flavorQuantities["Paçoca"] ?: 0
+
+    val ninho: Int
+        get() = flavorQuantities["Ninho"] ?: 0
+
+    val ninhoNutella: Int
+        get() = flavorQuantities["Ninho c/ Nutella"] ?: 0
+
+    val maracuja: Int
+        get() = flavorQuantities["Maracujá"] ?: 0
+
+    val outro: Int
+        get() = flavorQuantities["Outro"] ?: 0
 }

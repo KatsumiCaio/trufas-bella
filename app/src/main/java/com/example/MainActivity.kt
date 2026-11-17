@@ -110,22 +110,31 @@ class MainActivity : ComponentActivity() {
                                     orderToEdit = null
                                 },
                                 onSave = { clientName, brigadeiro, pacoca, ninho, ninhoNutella, maracuja, outro, unitPriceSimple, unitPriceSpecial, paymentMethod, isPaid, notes ->
+                                    val flavorQuantities = mapOf(
+                                        "Brigadeiro" to brigadeiro,
+                                        "Paçoca" to pacoca,
+                                        "Ninho" to ninho,
+                                        "Ninho c/ Nutella" to ninhoNutella,
+                                        "Maracujá" to maracuja,
+                                        "Outro" to outro
+                                    ).filterValues { it > 0 }
+
+                                    val totalPrice = ((brigadeiro + pacoca + ninho + maracuja + outro) * unitPriceSimple) + (ninhoNutella * unitPriceSpecial)
+
                                     if (orderToEdit == null) {
                                         viewModel.insertOrder(
-                                            clientName, brigadeiro, pacoca, ninho, ninhoNutella, maracuja, outro,
-                                            unitPriceSimple, unitPriceSpecial, paymentMethod, isPaid, notes
+                                            clientName = clientName,
+                                            flavorQuantities = flavorQuantities,
+                                            totalPrice = totalPrice,
+                                            paymentMethod = paymentMethod,
+                                            isPaid = isPaid,
+                                            notes = notes
                                         )
                                     } else {
                                         val updated = orderToEdit!!.copy(
                                             clientName = clientName.trim().uppercase(),
-                                            brigadeiro = brigadeiro,
-                                            pacoca = pacoca,
-                                            ninho = ninho,
-                                            ninhoNutella = ninhoNutella,
-                                            maracuja = maracuja,
-                                            outro = outro,
-                                            unitPriceSimple = unitPriceSimple,
-                                            unitPriceSpecial = unitPriceSpecial,
+                                            flavorQuantities = flavorQuantities,
+                                            totalPrice = totalPrice,
                                             paymentMethod = paymentMethod,
                                             isPaid = isPaid,
                                             notes = notes

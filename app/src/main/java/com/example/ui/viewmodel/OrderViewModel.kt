@@ -33,14 +33,8 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
 
     fun insertOrder(
         clientName: String,
-        brigadeiro: Int,
-        pacoca: Int,
-        ninho: Int,
-        ninhoNutella: Int,
-        maracuja: Int,
-        outro: Int,
-        unitPriceSimple: Double,
-        unitPriceSpecial: Double,
+        flavorQuantities: Map<String, Int>,
+        totalPrice: Double,
         paymentMethod: String,
         isPaid: Boolean,
         notes: String
@@ -50,14 +44,8 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             val formattedDate = dateFormat.format(Date())
             repository.addOrder(
                 clientName = clientName,
-                brigadeiro = brigadeiro,
-                pacoca = pacoca,
-                ninho = ninho,
-                ninhoNutella = ninhoNutella,
-                maracuja = maracuja,
-                outro = outro,
-                unitPriceSimple = unitPriceSimple,
-                unitPriceSpecial = unitPriceSpecial,
+                flavorQuantities = flavorQuantities,
+                totalPrice = totalPrice,
                 paymentMethod = paymentMethod,
                 isPaid = isPaid,
                 notes = notes,
@@ -107,22 +95,16 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
             val today = dateFormat.format(Date())
             val sample = listOf(
-                OrderModel(clientName = "BRUNO", brigadeiro = 3, ninho = 2, outro = 1, paymentMethod = "PIX", isPaid = true, notes = "Pagou via PIX", createdAt = today),
-                OrderModel(clientName = "DOUGLAS", pacoca = 4, ninhoNutella = 2, maracuja = 3, paymentMethod = "Dinheiro", isPaid = true, notes = "Entregue no trabalho", createdAt = today),
-                OrderModel(clientName = "MARIANA", brigadeiro = 2, ninho = 4, paymentMethod = "Pendente", isPaid = false, notes = "Vai pagar semana que vem", createdAt = today),
-                OrderModel(clientName = "CAMILA", ninhoNutella = 3, pacoca = 2, paymentMethod = "PIX", isPaid = true, notes = "Pix ok", createdAt = today)
+                OrderModel(clientName = "BRUNO", flavorQuantities = mapOf("Brigadeiro" to 3, "Ninho" to 2, "Outro" to 1), totalPrice = 42.0, paymentMethod = "PIX", isPaid = true, notes = "Pagou via PIX", createdAt = today),
+                OrderModel(clientName = "DOUGLAS", flavorQuantities = mapOf("Paçoca" to 4, "Ninho c/ Nutella" to 2, "Maracujá" to 3), totalPrice = 65.0, paymentMethod = "Dinheiro", isPaid = true, notes = "Entregue no trabalho", createdAt = today),
+                OrderModel(clientName = "MARIANA", flavorQuantities = mapOf("Brigadeiro" to 2, "Ninho" to 4), totalPrice = 42.0, paymentMethod = "Pendente", isPaid = false, notes = "Vai pagar semana que vem", createdAt = today),
+                OrderModel(clientName = "CAMILA", flavorQuantities = mapOf("Ninho c/ Nutella" to 3, "Paçoca" to 2), totalPrice = 38.0, paymentMethod = "PIX", isPaid = true, notes = "Pix ok", createdAt = today)
             )
             sample.forEach {
                 repository.addOrder(
                     clientName = it.clientName,
-                    brigadeiro = it.brigadeiro,
-                    pacoca = it.pacoca,
-                    ninho = it.ninho,
-                    ninhoNutella = it.ninhoNutella,
-                    maracuja = it.maracuja,
-                    outro = it.outro,
-                    unitPriceSimple = it.unitPriceSimple,
-                    unitPriceSpecial = it.unitPriceSpecial,
+                    flavorQuantities = it.flavorQuantities,
+                    totalPrice = it.totalPrice,
                     paymentMethod = it.paymentMethod,
                     isPaid = it.isPaid,
                     notes = it.notes,
