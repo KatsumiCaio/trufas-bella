@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,38 +19,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.example.data.FlavorModel
 import com.example.data.OrderModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditOrderDialog(
     orderToEdit: OrderModel? = null,
+    flavors: List<FlavorModel>,
     onDismiss: () -> Unit,
     onSave: (
         clientName: String,
-        brigadeiro: Int,
-        pacoca: Int,
-        ninho: Int,
-        ninhoNutella: Int,
-        maracuja: Int,
-        outro: Int,
-        unitPriceSimple: Double,
-        unitPriceSpecial: Double,
+        flavorQuantities: Map<String, Int>,
+        totalPrice: Double,
         paymentMethod: String,
         isPaid: Boolean,
         notes: String
-    ) -> Unit
+    ) -> Unit,
+    onSeedFlavors: () -> Unit
 ) {
     var clientName by remember { mutableStateOf(orderToEdit?.clientName ?: "") }
-    var brigadeiro by remember { mutableStateOf(orderToEdit?.brigadeiro ?: 0) }
-    var pacoca by remember { mutableStateOf(orderToEdit?.pacoca ?: 0) }
-    var ninho by remember { mutableStateOf(orderToEdit?.ninho ?: 0) }
-    var ninhoNutella by remember { mutableStateOf(orderToEdit?.ninhoNutella ?: 0) }
-    var maracuja by remember { mutableStateOf(orderToEdit?.maracuja ?: 0) }
-    var outro by remember { mutableStateOf(orderToEdit?.outro ?: 0) }
-
-    var unitPriceSimpleStr by remember { mutableStateOf(orderToEdit?.unitPriceSimple?.toString() ?: "7.0") }
-    var unitPriceSpecialStr by remember { mutableStateOf(orderToEdit?.unitPriceSpecial?.toString() ?: "8.0") }
+    var flavorCounts by remember { mutableStateOf(orderToEdit?.flavorQuantities ?: emptyMap<String, Int>()) }
 
     var paymentMethod by remember { mutableStateOf(orderToEdit?.paymentMethod ?: "PIX") }
     var isPaid by remember { mutableStateOf(orderToEdit?.isPaid ?: false) }
@@ -58,11 +48,11 @@ fun AddEditOrderDialog(
     var expandedPayment by remember { mutableStateOf(false) }
     val paymentOptions = listOf("PIX", "Dinheiro", "Pendente")
 
-    val simplePrice = unitPriceSimpleStr.toDoubleOrNull() ?: 7.0
-    val specialPrice = unitPriceSpecialStr.toDoubleOrNull() ?: 8.0
-
-    val totalQty = brigadeiro + pacoca + ninho + ninhoNutella + maracuja + outro
-    val totalPrice = ((brigadeiro + pacoca + ninho + maracuja + outro) * simplePrice) + (ninhoNutella * specialPrice)
+    val totalQty = flavorCounts.values.sum()
+    val totalPrice = flavorCounts.entries.sumOf { (flavorName, qty) ->
+        val price = flavors.find { it.name == flavorName }?.price ?: 7.0
+        qty * price
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -99,36 +89,45 @@ fun AddEditOrderDialog(
                         .testTag("client_name_input")
                 )
 
-                Text("Sabores de Trufas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-
-                FlavorCounterRow("Brigadeiro (R$ $simplePrice)", brigadeiro) { brigadeiro = it }
-                FlavorCounterRow("Paçoca (R$ $simplePrice)", pacoca) { pacoca = it }
-                FlavorCounterRow("Ninho (R$ $simplePrice)", ninho) { ninho = it }
-                FlavorCounterRow("Ninho c/ Nutella (Especial - R$ $specialPrice)", ninhoNutella) { ninhoNutella = it }
-                FlavorCounterRow("Maracujá (R$ $simplePrice)", maracuja) { maracuja = it }
-                FlavorCounterRow("Outro (R$ $simplePrice)", outro) { outro = it }
-
-                Divider(color = MaterialTheme.colorScheme.outlineVariant)
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedTextField(
-                        value = unitPriceSimpleStr,
-                        onValueChange = { unitPriceSimpleStr = it },
-                        label = { Text("Preço Simples (R$)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = unitPriceSpecialStr,
-                        onValueChange = { unitPriceSpecialStr = it },
-                        label = { Text("Preço Especial (R$)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
+                    Text("Sabores de Trufas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    if (flavors.isEmpty()) {
+                        TextButton(onClick = onSeedFlavors) {
+                            Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Carregar Padrões")
+                        }
+                    }
                 }
+
+                if (flavors.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Nenhum sabor cadastrado. Clique em Carregar Padrões ou adicione na aba Sabores.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                    }
+                } else {
+                    flavors.forEach { flavor ->
+                        val count = flavorCounts[flavor.name] ?: 0
+                        FlavorCounterRow(
+                            label = if (flavor.isSpecial) "${flavor.name} (Especial - R$ %.2f)".format(flavor.price) else "${flavor.name} (R$ %.2f)".format(flavor.price),
+                            count = count
+                        ) { newCount ->
+                            flavorCounts = flavorCounts.toMutableMap().apply {
+                                if (newCount > 0) put(flavor.name, newCount) else remove(flavor.name)
+                            }
+                        }
+                    }
+                }
+
+                Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -225,14 +224,8 @@ fun AddEditOrderDialog(
                             if (clientName.isNotBlank() && totalQty > 0) {
                                 onSave(
                                     clientName,
-                                    brigadeiro,
-                                    pacoca,
-                                    ninho,
-                                    ninhoNutella,
-                                    maracuja,
-                                    outro,
-                                    simplePrice,
-                                    specialPrice,
+                                    flavorCounts,
+                                    totalPrice,
                                     paymentMethod,
                                     isPaid,
                                     notes

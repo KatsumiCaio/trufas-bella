@@ -103,24 +103,15 @@ class MainActivity : ComponentActivity() {
                         }
 
                         if (showAddDialog) {
+                            val flavors by viewModel.allFlavors.collectAsState()
                             AddEditOrderDialog(
                                 orderToEdit = orderToEdit,
+                                flavors = flavors,
                                 onDismiss = {
                                     showAddDialog = false
                                     orderToEdit = null
                                 },
-                                onSave = { clientName, brigadeiro, pacoca, ninho, ninhoNutella, maracuja, outro, unitPriceSimple, unitPriceSpecial, paymentMethod, isPaid, notes ->
-                                    val flavorQuantities = mapOf(
-                                        "Brigadeiro" to brigadeiro,
-                                        "Paçoca" to pacoca,
-                                        "Ninho" to ninho,
-                                        "Ninho c/ Nutella" to ninhoNutella,
-                                        "Maracujá" to maracuja,
-                                        "Outro" to outro
-                                    ).filterValues { it > 0 }
-
-                                    val totalPrice = ((brigadeiro + pacoca + ninho + maracuja + outro) * unitPriceSimple) + (ninhoNutella * unitPriceSpecial)
-
+                                onSave = { clientName, flavorQuantities, totalPrice, paymentMethod, isPaid, notes ->
                                     if (orderToEdit == null) {
                                         viewModel.insertOrder(
                                             clientName = clientName,
@@ -143,6 +134,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                     showAddDialog = false
                                     orderToEdit = null
+                                },
+                                onSeedFlavors = {
+                                    viewModel.seedDefaultFlavors()
                                 }
                             )
                         }

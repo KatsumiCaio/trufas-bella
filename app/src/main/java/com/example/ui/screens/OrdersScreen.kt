@@ -210,16 +210,10 @@ fun OrderItemCard(
     onDelete: () -> Unit,
     onWhatsAppShare: () -> Unit
 ) {
-    val flavorsText = buildString {
-        val list = mutableListOf<String>()
-        if (order.brigadeiro > 0) list.add("${order.brigadeiro} Brig.")
-        if (order.pacoca > 0) list.add("${order.pacoca} Paç.")
-        if (order.ninho > 0) list.add("${order.ninho} Ninho")
-        if (order.ninhoNutella > 0) list.add("${order.ninhoNutella} Ninho+Nut.")
-        if (order.maracuja > 0) list.add("${order.maracuja} Marac.")
-        if (order.outro > 0) list.add("${order.outro} Outro")
-        append(list.joinToString(", "))
-    }
+    val flavorsText = order.flavorQuantities
+        .filter { it.value > 0 }
+        .entries
+        .joinToString(", ") { "${it.value} ${it.key}" }
 
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -314,14 +308,10 @@ fun OrderItemCard(
 }
 
 fun shareOnWhatsApp(context: Context, order: OrderModel) {
-    val flavorsList = buildString {
-        if (order.brigadeiro > 0) append("${order.brigadeiro} Brigadeiro, ")
-        if (order.pacoca > 0) append("${order.pacoca} Paçoca, ")
-        if (order.ninho > 0) append("${order.ninho} Ninho, ")
-        if (order.ninhoNutella > 0) append("${order.ninhoNutella} Ninho c/ Nutella, ")
-        if (order.maracuja > 0) append("${order.maracuja} Maracujá, ")
-        if (order.outro > 0) append("${order.outro} Outro, ")
-    }.trimEnd(',', ' ')
+    val flavorsList = order.flavorQuantities
+        .filter { it.value > 0 }
+        .entries
+        .joinToString(", ") { "${it.value} ${it.key}" }
 
     val text = "*TRUFAS BELLA - COMPROVANTE DE ENCOMENDA*\n\n" +
             "Cliente: *${order.clientName}*\n" +

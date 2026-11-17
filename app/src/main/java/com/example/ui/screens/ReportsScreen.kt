@@ -35,22 +35,14 @@ fun ReportsScreen(viewModel: OrderViewModel) {
         }
         .sortedByDescending { it.second }
 
-    // Aggregate flavor sales
-    val totalBrigadeiro = orders.sumOf { it.brigadeiro }
-    val totalPacoca = orders.sumOf { it.pacoca }
-    val totalNinho = orders.sumOf { it.ninho }
-    val totalNinhoNutella = orders.sumOf { it.ninhoNutella }
-    val totalMaracuja = orders.sumOf { it.maracuja }
-    val totalOutro = orders.sumOf { it.outro }
-
-    val flavorList = listOf(
-        "Brigadeiro" to totalBrigadeiro,
-        "Paçoca" to totalPacoca,
-        "Ninho" to totalNinho,
-        "Ninho c/ Nutella" to totalNinhoNutella,
-        "Maracujá" to totalMaracuja,
-        "Outro" to totalOutro
-    ).sortedByDescending { it.second }
+    // Aggregate flavor sales dynamically
+    val flavorSalesMap = mutableMapOf<String, Int>()
+    orders.forEach { order ->
+        order.flavorQuantities.forEach { (name, qty) ->
+            flavorSalesMap[name] = (flavorSalesMap[name] ?: 0) + qty
+        }
+    }
+    val flavorList = flavorSalesMap.entries.map { it.key to it.value }.sortedByDescending { it.second }
 
     val maxFlavorCount = flavorList.maxOfOrNull { it.second }?.coerceAtLeast(1) ?: 1
 
