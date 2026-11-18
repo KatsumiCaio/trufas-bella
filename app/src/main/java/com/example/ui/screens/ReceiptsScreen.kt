@@ -27,12 +27,13 @@ import com.example.ui.viewmodel.OrderViewModel
 @Composable
 fun ReceiptsScreen(viewModel: OrderViewModel) {
     val orders by viewModel.allOrders.collectAsState()
+    val unpaidOrders = orders.filter { !it.isPaid }
     val context = LocalContext.current
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Recibos e Tags de Encomenda", fontWeight = FontWeight.Bold) },
+                title = { Text("Recibos (Pedidos Pendentes)", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -40,7 +41,7 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
             )
         }
     ) { padding ->
-        if (orders.isEmpty()) {
+        if (unpaidOrders.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -50,7 +51,7 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Nenhum pedido cadastrado para gerar recibos", color = MaterialTheme.colorScheme.outline)
+                    Text("Nenhum pedido pendente para gerar recibos", color = MaterialTheme.colorScheme.outline)
                 }
             }
         } else {
@@ -62,7 +63,7 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(orders, key = { it.id }) { order ->
+                items(unpaidOrders, key = { it.id }) { order ->
                     ReceiptCard(
                         order = order,
                         onShare = { shareOnWhatsApp(context, order) },
