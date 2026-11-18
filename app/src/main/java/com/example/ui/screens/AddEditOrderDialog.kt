@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.data.FlavorModel
 import com.example.data.OrderModel
+import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +36,8 @@ fun AddEditOrderDialog(
         totalPrice: Double,
         paymentMethod: String,
         isPaid: Boolean,
-        notes: String
+        notes: String,
+        weekOfMonth: Int
     ) -> Unit,
     onSeedFlavors: () -> Unit
 ) {
@@ -45,8 +48,16 @@ fun AddEditOrderDialog(
     var isPaid by remember { mutableStateOf(orderToEdit?.isPaid ?: false) }
     var notes by remember { mutableStateOf(orderToEdit?.notes ?: "") }
 
+    val maxWeeks = remember {
+        val cal = Calendar.getInstance(Locale("pt", "BR"))
+        cal.getActualMaximum(Calendar.WEEK_OF_MONTH) // Evaluates months with 4 or 5 weeks automatically
+    }
+    var selectedWeek by remember { mutableStateOf(orderToEdit?.weekOfMonth?.coerceIn(1, maxWeeks) ?: 1) }
+
     var expandedPayment by remember { mutableStateOf(false) }
+    var expandedWeek by remember { mutableStateOf(false) }
     val paymentOptions = listOf("PIX", "Dinheiro", "Pendente")
+    val weekOptions = (1..maxWeeks).toList()
 
     val totalQty = flavorCounts.values.sum()
     val totalPrice = flavorCounts.entries.sumOf { (flavorName, qty) ->
@@ -88,6 +99,38 @@ fun AddEditOrderDialog(
                         .fillMaxWidth()
                         .testTag("client_name_input")
                 )
+
+                // Week of Month Selector (automatically evaluating months with 4 or 5 weeks)
+                ExposedDropdownMenuBox(
+                    expanded = expandedWeek,
+                    onExpandedChange = { expandedWeek = !expandedWeek },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = "Semana $selectedWeek do Mês ($maxWeeks semanas neste mês)",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Semana do Mês") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedWeek) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedWeek,
+                        onDismissRequest = { expandedWeek = false }
+                    ) {
+                        weekOptions.forEach { week ->
+                            DropdownMenuItem(
+                                text = { Text("Semana $week") },
+                                onClick = {
+                                    selectedWeek = week
+                                    expandedWeek = false
+                                }
+                            )
+                        }
+                    }
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -228,7 +271,8 @@ fun AddEditOrderDialog(
                                     totalPrice,
                                     paymentMethod,
                                     isPaid,
-                                    notes
+                                    notes,
+                                    selectedWeek
                                 )
                             }
                         },

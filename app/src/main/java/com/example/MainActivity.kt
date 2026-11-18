@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
                                     showAddDialog = false
                                     orderToEdit = null
                                 },
-                                onSave = { clientName, flavorQuantities, totalPrice, paymentMethod, isPaid, notes ->
+                                onSave = { clientName, flavorQuantities, totalPrice, paymentMethod, isPaid, notes, weekOfMonth ->
                                     if (orderToEdit == null) {
                                         viewModel.insertOrder(
                                             clientName = clientName,
@@ -119,7 +119,8 @@ class MainActivity : ComponentActivity() {
                                             totalPrice = totalPrice,
                                             paymentMethod = paymentMethod,
                                             isPaid = isPaid,
-                                            notes = notes
+                                            notes = notes,
+                                            weekOfMonth = weekOfMonth
                                         )
                                     } else {
                                         val updated = orderToEdit!!.copy(
@@ -128,7 +129,8 @@ class MainActivity : ComponentActivity() {
                                             totalPrice = totalPrice,
                                             paymentMethod = paymentMethod,
                                             isPaid = isPaid,
-                                            notes = notes
+                                            notes = notes,
+                                            weekOfMonth = weekOfMonth
                                         )
                                         viewModel.updateOrder(updated)
                                     }

@@ -36,10 +36,13 @@ class FirestoreRepository(private val context: Context) {
         paymentMethod: String,
         isPaid: Boolean,
         notes: String,
-        createdAt: String
+        createdAt: String,
+        weekOfMonth: Int
     ) {
         val colRef = db.collection("shops").document("trufas_bella").collection("orders")
         val docRef = colRef.document()
+        val nowMillis = System.currentTimeMillis()
+        val monthKey = java.text.SimpleDateFormat("MM/yyyy", java.util.Locale("pt", "BR")).format(java.util.Date(nowMillis))
         val order = OrderModel(
             id = docRef.id,
             clientName = clientName.trim().uppercase(),
@@ -48,8 +51,10 @@ class FirestoreRepository(private val context: Context) {
             paymentMethod = paymentMethod,
             isPaid = isPaid,
             notes = notes,
-            dateMillis = System.currentTimeMillis(),
-            createdAt = createdAt
+            dateMillis = nowMillis,
+            createdAt = createdAt,
+            weekOfMonth = weekOfMonth,
+            monthKey = monthKey
         )
         docRef.set(order).await()
     }

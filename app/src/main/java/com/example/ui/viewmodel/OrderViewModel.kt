@@ -37,7 +37,8 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         totalPrice: Double,
         paymentMethod: String,
         isPaid: Boolean,
-        notes: String
+        notes: String,
+        weekOfMonth: Int
     ) {
         viewModelScope.launch {
             val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
@@ -49,7 +50,8 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                 paymentMethod = paymentMethod,
                 isPaid = isPaid,
                 notes = notes,
-                createdAt = formattedDate
+                createdAt = formattedDate,
+                weekOfMonth = weekOfMonth
             )
         }
     }
@@ -95,10 +97,10 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
             val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
             val today = dateFormat.format(Date())
             val sample = listOf(
-                OrderModel(clientName = "BRUNO", flavorQuantities = mapOf("Brigadeiro" to 3, "Ninho" to 2, "Outro" to 1), totalPrice = 42.0, paymentMethod = "PIX", isPaid = true, notes = "Pagou via PIX", createdAt = today),
-                OrderModel(clientName = "DOUGLAS", flavorQuantities = mapOf("Paçoca" to 4, "Ninho c/ Nutella" to 2, "Maracujá" to 3), totalPrice = 65.0, paymentMethod = "Dinheiro", isPaid = true, notes = "Entregue no trabalho", createdAt = today),
-                OrderModel(clientName = "MARIANA", flavorQuantities = mapOf("Brigadeiro" to 2, "Ninho" to 4), totalPrice = 42.0, paymentMethod = "Pendente", isPaid = false, notes = "Vai pagar semana que vem", createdAt = today),
-                OrderModel(clientName = "CAMILA", flavorQuantities = mapOf("Ninho c/ Nutella" to 3, "Paçoca" to 2), totalPrice = 38.0, paymentMethod = "PIX", isPaid = true, notes = "Pix ok", createdAt = today)
+                OrderModel(clientName = "BRUNO", flavorQuantities = mapOf("Brigadeiro" to 3, "Ninho" to 2, "Outro" to 1), totalPrice = 42.0, paymentMethod = "PIX", isPaid = true, notes = "Pagou via PIX", createdAt = today, weekOfMonth = 1),
+                OrderModel(clientName = "DOUGLAS", flavorQuantities = mapOf("Paçoca" to 4, "Ninho c/ Nutella" to 2, "Maracujá" to 3), totalPrice = 65.0, paymentMethod = "Dinheiro", isPaid = true, notes = "Entregue no trabalho", createdAt = today, weekOfMonth = 1),
+                OrderModel(clientName = "MARIANA", flavorQuantities = mapOf("Brigadeiro" to 2, "Ninho" to 4), totalPrice = 42.0, paymentMethod = "Pendente", isPaid = false, notes = "Vai pagar semana que vem", createdAt = today, weekOfMonth = 2),
+                OrderModel(clientName = "CAMILA", flavorQuantities = mapOf("Ninho c/ Nutella" to 3, "Paçoca" to 2), totalPrice = 38.0, paymentMethod = "PIX", isPaid = true, notes = "Pix ok", createdAt = today, weekOfMonth = 2)
             )
             sample.forEach {
                 repository.addOrder(
@@ -108,7 +110,8 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                     paymentMethod = it.paymentMethod,
                     isPaid = it.isPaid,
                     notes = it.notes,
-                    createdAt = it.createdAt
+                    createdAt = it.createdAt,
+                    weekOfMonth = it.weekOfMonth
                 )
             }
         }

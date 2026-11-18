@@ -15,7 +15,9 @@ data class OrderModel(
     val isPaid: Boolean = false,
     val notes: String = "",
     val dateMillis: Long = System.currentTimeMillis(),
-    val createdAt: String = ""
+    val createdAt: String = "",
+    val weekOfMonth: Int = 1,
+    val monthKey: String = ""
 ) {
     val totalQuantity: Int
         get() = flavorQuantities.values.sum()

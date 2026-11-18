@@ -1,12 +1,12 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.OrderModel
 import com.example.ui.viewmodel.OrderViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +39,18 @@ fun ReportsScreen(viewModel: OrderViewModel) {
         }
         .sortedByDescending { it.second }
 
+    // Group orders month by month, summing up weeks of the month
+    val ordersByMonth = orders.groupBy { order ->
+        if (order.monthKey.isNotBlank()) order.monthKey else {
+            val fmt = SimpleDateFormat("MM/yyyy", Locale("pt", "BR"))
+            fmt.format(Date(order.dateMillis))
+        }
+    }.toSortedMap(compareByDescending { it })
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Relatórios & Gráficos", fontWeight = FontWeight.Bold) },
+                title = { Text("Relatório Mês a Mês & Gráficos", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -55,7 +66,7 @@ fun ReportsScreen(viewModel: OrderViewModel) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Revenue Summary Card
+            // General Revenue Summary Card
             item {
                 Card(
                     shape = RoundedCornerShape(20.dp),
@@ -69,7 +80,7 @@ fun ReportsScreen(viewModel: OrderViewModel) {
                             .padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Faturamento Geral", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Resumo Geral", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -112,7 +123,7 @@ fun ReportsScreen(viewModel: OrderViewModel) {
                 }
             }
 
-            // Daily Revenue Chart Card
+            // Month by Month Breakdown (Summing weeks of each month)
             item {
                 Card(
                     shape = RoundedCornerShape(20.dp),
@@ -126,7 +137,70 @@ fun ReportsScreen(viewModel: OrderViewModel) {
                             .padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        DailyRevenueChart(orders = orders)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Relatório Mês a Mês (por Semanas)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+
+                        if (ordersByMonth.isEmpty()) {
+                            Text("Nenhum pedido registrado para relatórios.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                ordersByMonth.forEach { (monthKey, monthOrders) ->
+                                    val monthRevenue = monthOrders.sumOf { it.totalPrice }
+                                    val monthTruffles = monthOrders.sumOf { it.totalQuantity }
+                                    val weeksGrouped = monthOrders.groupBy { it.weekOfMonth }.toSortedMap()
+
+                                    Card(
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(14.dp),
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text("Mês: $monthKey", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                Text("R$ %.2f ($monthTruffles und)".format(monthRevenue), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold)
+                                            }
+
+                                            Divider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                                            weeksGrouped.forEach { (weekNum, weekOrders) ->
+                                                val weekRevenue = weekOrders.sumOf { it.totalPrice }
+                                                val weekTruffles = weekOrders.sumOf { it.totalQuantity }
+
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                                                        .padding(10.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Column {
+                                                        Text("Semana $weekNum", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                                        Text("${weekOrders.size} encomendas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                                                    }
+                                                    Column(horizontalAlignment = Alignment.End) {
+                                                        Text("R$ %.2f".format(weekRevenue), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                        Text("$weekTruffles trufas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -207,70 +281,6 @@ fun ReportsScreen(viewModel: OrderViewModel) {
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DailyRevenueChart(orders: List<OrderModel>) {
-    val revenueByDay = orders.groupBy { it.createdAt.ifBlank { "Hoje" } }
-        .mapValues { (_, list) -> list.sumOf { it.totalPrice } }
-        .entries.toList()
-        .sortedBy { it.key }
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.BarChart, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Faturamento Total por Dia (R$)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        }
-
-        if (revenueByDay.isEmpty()) {
-            Text("Nenhum dado de faturamento por dia.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
-            return
-        }
-
-        val maxRevenue = revenueByDay.maxOfOrNull { it.value }?.coerceAtLeast(10.0) ?: 10.0
-        val primaryColor = MaterialTheme.colorScheme.primary
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                .padding(16.dp)
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val width = size.width
-                val height = size.height - 16.dp.toPx()
-                val barWidth = (width / (revenueByDay.size * 2)).coerceIn(12.dp.toPx(), 40.dp.toPx())
-                val totalBarsWidth = barWidth * revenueByDay.size
-                val spacing = (width - totalBarsWidth) / (revenueByDay.size + 1).coerceAtLeast(1)
-
-                revenueByDay.forEachIndexed { index, (_, revenue) ->
-                    val barHeight = (revenue.toFloat() / maxRevenue.toFloat()) * height
-                    val left = spacing + index * (barWidth + spacing)
-                    val top = height - barHeight
-
-                    drawRect(
-                        color = primaryColor,
-                        topLeft = androidx.compose.ui.geometry.Offset(left, top),
-                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight.coerceAtLeast(4f))
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
-        ) {
-            revenueByDay.forEach { (day, revenue) ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("R$ %.0f".format(revenue), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Text(day, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                 }
             }
         }
