@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,7 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.data.OrderModel
 import com.example.ui.viewmodel.OrderViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,21 +36,10 @@ fun ReportsScreen(viewModel: OrderViewModel) {
         }
         .sortedByDescending { it.second }
 
-    // Aggregate flavor sales dynamically
-    val flavorSalesMap = mutableMapOf<String, Int>()
-    orders.forEach { order ->
-        order.flavorQuantities.forEach { (name, qty) ->
-            flavorSalesMap[name] = (flavorSalesMap[name] ?: 0) + qty
-        }
-    }
-    val flavorList = flavorSalesMap.entries.map { it.key to it.value }.sortedByDescending { it.second }
-
-    val maxFlavorCount = flavorList.maxOfOrNull { it.second }?.coerceAtLeast(1) ?: 1
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Relatórios & Faturamento", fontWeight = FontWeight.Bold) },
+                title = { Text("Relatórios & Gráficos", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -122,7 +112,45 @@ fun ReportsScreen(viewModel: OrderViewModel) {
                 }
             }
 
-            // Client Ranking / Dynamic Table
+            // Daily Revenue Chart Card
+            item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        DailyRevenueChart(orders = orders)
+                    }
+                }
+            }
+
+            // Truffle Type Chart Card
+            item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        TruffleTypeChart(orders = orders)
+                    }
+                }
+            }
+
+            // Client Ranking Card
             item {
                 Card(
                     shape = RoundedCornerShape(20.dp),
@@ -181,50 +209,115 @@ fun ReportsScreen(viewModel: OrderViewModel) {
                     }
                 }
             }
+        }
+    }
+}
 
-            // Flavor Sales Chart / Progress Bars
-            item {
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.BarChart, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Sabores mais Vendidos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        }
+@Composable
+fun DailyRevenueChart(orders: List<OrderModel>) {
+    val revenueByDay = orders.groupBy { it.createdAt.ifBlank { "Hoje" } }
+        .mapValues { (_, list) -> list.sumOf { it.totalPrice } }
+        .entries.toList()
+        .sortedBy { it.key }
 
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            flavorList.forEach { (flavor, count) ->
-                                val fraction = (count.toFloat() / maxFlavorCount).coerceIn(0.05f, 1f)
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(flavor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                        Text("$count und", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                                    }
-                                    LinearProgressIndicator(
-                                        progress = { fraction },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(10.dp)
-                                            .clip(RoundedCornerShape(5.dp)),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        trackColor = MaterialTheme.colorScheme.outlineVariant
-                                    )
-                                }
-                            }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.BarChart, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Faturamento Total por Dia (R$)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+
+        if (revenueByDay.isEmpty()) {
+            Text("Nenhum dado de faturamento por dia.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+            return
+        }
+
+        val maxRevenue = revenueByDay.maxOfOrNull { it.value }?.coerceAtLeast(10.0) ?: 10.0
+        val primaryColor = MaterialTheme.colorScheme.primary
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                .padding(16.dp)
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val width = size.width
+                val height = size.height - 16.dp.toPx()
+                val barWidth = (width / (revenueByDay.size * 2)).coerceIn(12.dp.toPx(), 40.dp.toPx())
+                val totalBarsWidth = barWidth * revenueByDay.size
+                val spacing = (width - totalBarsWidth) / (revenueByDay.size + 1).coerceAtLeast(1)
+
+                revenueByDay.forEachIndexed { index, (_, revenue) ->
+                    val barHeight = (revenue.toFloat() / maxRevenue.toFloat()) * height
+                    val left = spacing + index * (barWidth + spacing)
+                    val top = height - barHeight
+
+                    drawRect(
+                        color = primaryColor,
+                        topLeft = androidx.compose.ui.geometry.Offset(left, top),
+                        size = androidx.compose.ui.geometry.Size(barWidth, barHeight.coerceAtLeast(4f))
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            revenueByDay.forEach { (day, revenue) ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("R$ %.0f".format(revenue), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(day, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TruffleTypeChart(orders: List<OrderModel>) {
+    val flavorSalesMap = mutableMapOf<String, Int>()
+    orders.forEach { order ->
+        order.flavorQuantities.forEach { (name, qty) ->
+            flavorSalesMap[name] = (flavorSalesMap[name] ?: 0) + qty
+        }
+    }
+    val flavorList = flavorSalesMap.entries.map { it.key to it.value }.sortedByDescending { it.second }
+    val maxFlavorCount = flavorList.maxOfOrNull { it.second }?.coerceAtLeast(1) ?: 1
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.BarChart, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Vendas por Tipo de Trufa", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+
+        if (flavorList.isEmpty()) {
+            Text("Nenhuma venda registrada ainda.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                flavorList.forEach { (flavor, count) ->
+                    val fraction = (count.toFloat() / maxFlavorCount).coerceIn(0.05f, 1f)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(flavor, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                            Text("$count und", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                         }
+                        LinearProgressIndicator(
+                            progress = { fraction },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(12.dp)
+                                .clip(RoundedCornerShape(6.dp)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.outlineVariant
+                        )
                     }
                 }
             }
