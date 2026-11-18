@@ -1,6 +1,7 @@
 package com.example.data
 
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.PropertyName
 
 data class OrderModel(
     @DocumentId
@@ -12,6 +13,8 @@ data class OrderModel(
     val unitPriceSimple: Double = 7.0,
     val unitPriceSpecial: Double = 8.0,
     val paymentMethod: String = "PIX",
+    @get:PropertyName("isPaid")
+    @field:PropertyName("isPaid")
     val isPaid: Boolean = false,
     val notes: String = "",
     val dateMillis: Long = System.currentTimeMillis(),

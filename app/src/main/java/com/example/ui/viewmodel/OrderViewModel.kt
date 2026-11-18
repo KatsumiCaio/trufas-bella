@@ -56,9 +56,14 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun updateOrder(order: OrderModel) {
+    fun updateOrder(order: OrderModel, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
-            repository.updateOrder(order)
+            try {
+                repository.updateOrder(order)
+                onSuccess()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

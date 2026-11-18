@@ -239,7 +239,18 @@ fun OrdersScreen(
                         OrderItemCard(
                             order = order,
                             onTogglePaid = {
-                                viewModel.updateOrder(order.copy(isPaid = !order.isPaid, paymentMethod = if (!order.isPaid) "PIX" else "Pendente"))
+                                val newIsPaid = !order.isPaid
+                                val updated = order.copy(
+                                    isPaid = newIsPaid,
+                                    paymentMethod = if (newIsPaid) "PIX" else "Pendente"
+                                )
+                                viewModel.updateOrder(updated) {
+                                    Toast.makeText(
+                                        context,
+                                        if (newIsPaid) "Pedido marcado como PAGO!" else "Pedido marcado como PENDENTE",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             },
                             onEdit = { onEditOrder(order) },
                             onDelete = { viewModel.deleteOrder(order) },

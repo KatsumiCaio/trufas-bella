@@ -60,9 +60,15 @@ class FirestoreRepository(private val context: Context) {
     }
 
     suspend fun updateOrder(order: OrderModel) {
-        require(order.id.isNotBlank())
-        val docRef = db.collection("shops").document("trufas_bella").collection("orders").document(order.id)
-        docRef.set(order).await()
+        val orderToSave = if (order.id.isBlank()) {
+            val colRef = db.collection("shops").document("trufas_bella").collection("orders")
+            val docRef = colRef.document()
+            order.copy(id = docRef.id)
+        } else {
+            order
+        }
+        val docRef = db.collection("shops").document("trufas_bella").collection("orders").document(orderToSave.id)
+        docRef.set(orderToSave).await()
     }
 
     suspend fun deleteOrder(order: OrderModel) {
