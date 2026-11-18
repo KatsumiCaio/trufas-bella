@@ -42,7 +42,12 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Etiquetas & Recibos de Separação", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Column {
+                        Text("Etiquetas & Recibos (Pendentes)", fontWeight = FontWeight.Bold)
+                        Text("Pedidos pagos saem automaticamente", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+                    }
+                },
                 actions = {
                     if (unpaidOrders.isNotEmpty()) {
                         IconButton(onClick = { printAllSeparationLabels(context, unpaidOrders) }) {
