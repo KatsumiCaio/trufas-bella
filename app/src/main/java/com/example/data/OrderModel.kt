@@ -24,22 +24,4 @@ data class OrderModel(
 ) {
     val totalQuantity: Int
         get() = flavorQuantities.values.sum()
-
-    val brigadeiro: Int
-        get() = flavorQuantities["Brigadeiro"] ?: 0
-
-    val pacoca: Int
-        get() = flavorQuantities["Paçoca"] ?: 0
-
-    val ninho: Int
-        get() = flavorQuantities["Ninho"] ?: 0
-
-    val ninhoNutella: Int
-        get() = flavorQuantities["Ninho c/ Nutella"] ?: 0
-
-    val maracuja: Int
-        get() = flavorQuantities["Maracujá"] ?: 0
-
-    val outro: Int
-        get() = flavorQuantities["Outro"] ?: 0
 }

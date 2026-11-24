@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.FlavorModel
 import com.example.data.OrderModel
 import com.example.ui.viewmodel.OrderViewModel
 
@@ -36,6 +37,7 @@ import com.example.ui.viewmodel.OrderViewModel
 @Composable
 fun ReceiptsScreen(viewModel: OrderViewModel) {
     val orders by viewModel.allOrders.collectAsState()
+    val flavors by viewModel.allFlavors.collectAsState()
     val unpaidOrders = orders.filter { !it.isPaid }
     val context = LocalContext.current
 
@@ -50,7 +52,7 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
                 },
                 actions = {
                     if (unpaidOrders.isNotEmpty()) {
-                        IconButton(onClick = { printAllSeparationLabels(context, unpaidOrders) }) {
+                        IconButton(onClick = { printAllSeparationLabels(context, unpaidOrders, flavors) }) {
                             Icon(Icons.Default.Print, contentDescription = "Imprimir Folha de Separação")
                         }
                     }
@@ -102,7 +104,7 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
                                 Text("${unpaidOrders.size} etiquetas prontas para impressão em lote", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
                             Button(
-                                onClick = { printAllSeparationLabels(context, unpaidOrders) },
+                                onClick = { printAllSeparationLabels(context, unpaidOrders, flavors) },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                             ) {
                                 Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -116,6 +118,7 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
                 items(unpaidOrders, key = { it.id }) { order ->
                     SeparationLabelCard(
                         order = order,
+                        flavors = flavors,
                         onShare = { shareOnWhatsApp(context, order) },
                         onCopy = {
                             val receiptText = buildReceiptText(order)
@@ -125,7 +128,7 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
                             Toast.makeText(context, "Etiqueta copiada para a área de transferência!", Toast.LENGTH_SHORT).show()
                         },
                         onPrint = {
-                            printSeparationLabel(context, order)
+                            printSeparationLabel(context, order, flavors)
                         }
                     )
                 }
@@ -137,10 +140,21 @@ fun ReceiptsScreen(viewModel: OrderViewModel) {
 @Composable
 fun SeparationLabelCard(
     order: OrderModel,
+    flavors: List<FlavorModel>,
     onShare: () -> Unit,
     onCopy: () -> Unit,
     onPrint: () -> Unit
 ) {
+    val activeFlavors = remember(flavors, order.flavorQuantities) {
+        val flavorNames = flavors.map { it.name }.toMutableList()
+        order.flavorQuantities.keys.forEach { key ->
+            if (!flavorNames.contains(key)) {
+                flavorNames.add(key)
+            }
+        }
+        flavorNames
+    }
+
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -169,8 +183,7 @@ fun SeparationLabelCard(
                 )
             }
 
-            // Tabular Grid matching the reference image layout
-            // Columns: NOME | BRIGADEIRO | PAÇOCA | NINHO | NI/C | MARACUJÁ | OUTRO | QTD | VALOR
+            // Tabular Grid dynamic based on registered flavors
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -185,18 +198,10 @@ fun SeparationLabelCard(
                 ) {
                     TableHeaderCell("NOME", modifier = Modifier.weight(2f))
                     TableDivider()
-                    TableHeaderCell("BRIG.", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableHeaderCell("PAÇOCA", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableHeaderCell("NINHO", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableHeaderCell("NI/C", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableHeaderCell("MARAC.", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableHeaderCell("OUTRO", modifier = Modifier.weight(1f))
-                    TableDivider()
+                    activeFlavors.forEach { flavorName ->
+                        TableHeaderCell(flavorName.uppercase().take(8), modifier = Modifier.weight(1f))
+                        TableDivider()
+                    }
                     TableHeaderCell("QTD", modifier = Modifier.weight(1f))
                     TableDivider()
                     TableHeaderCell("VALOR", modifier = Modifier.weight(1.2f))
@@ -210,18 +215,11 @@ fun SeparationLabelCard(
                 ) {
                     TableCell(order.clientName, modifier = Modifier.weight(2f), bold = true)
                     TableDivider()
-                    TableCell(if (order.brigadeiro > 0) order.brigadeiro.toString() else "", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableCell(if (order.pacoca > 0) order.pacoca.toString() else "", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableCell(if (order.ninho > 0) order.ninho.toString() else "", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableCell(if (order.ninhoNutella > 0) order.ninhoNutella.toString() else "", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableCell(if (order.maracuja > 0) order.maracuja.toString() else "", modifier = Modifier.weight(1f))
-                    TableDivider()
-                    TableCell(if (order.outro > 0) order.outro.toString() else "", modifier = Modifier.weight(1f))
-                    TableDivider()
+                    activeFlavors.forEach { flavorName ->
+                        val qty = order.flavorQuantities[flavorName] ?: 0
+                        TableCell(if (qty > 0) qty.toString() else "", modifier = Modifier.weight(1f))
+                        TableDivider()
+                    }
                     TableCell(order.totalQuantity.toString(), modifier = Modifier.weight(1f), bold = true)
                     TableDivider()
                     TableCell("R$ %.2f".format(order.totalPrice), modifier = Modifier.weight(1.2f), bold = true)
@@ -338,7 +336,7 @@ fun TableDivider() {
     )
 }
 
-fun printAllSeparationLabels(context: Context, orders: List<OrderModel>) {
+fun printAllSeparationLabels(context: Context, orders: List<OrderModel>, allFlavors: List<FlavorModel>) {
     val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
     if (printManager == null) {
         Toast.makeText(context, "Impressão não suportada neste dispositivo", Toast.LENGTH_SHORT).show()
@@ -346,6 +344,17 @@ fun printAllSeparationLabels(context: Context, orders: List<OrderModel>) {
     }
 
     val rowsHtml = orders.joinToString(separator = "<br/><hr style='border: 1px dashed #666; margin: 20px 0;'/><br/>") { order ->
+        val flavorNames = allFlavors.map { it.name }.toMutableList()
+        order.flavorQuantities.keys.forEach { key ->
+            if (!flavorNames.contains(key)) flavorNames.add(key)
+        }
+
+        val ths = flavorNames.joinToString("") { "<th>${it.uppercase()}</th>" }
+        val tds = flavorNames.joinToString("") { flavorName ->
+            val qty = order.flavorQuantities[flavorName] ?: 0
+            "<td>${if (qty > 0) qty.toString() else ""}</td>"
+        }
+
         """
         <div class="label-block">
             <div class="header-info">
@@ -355,23 +364,13 @@ fun printAllSeparationLabels(context: Context, orders: List<OrderModel>) {
             <table>
                 <tr>
                     <th>NOME</th>
-                    <th>BRIG.</th>
-                    <th>PAÇOCA</th>
-                    <th>NINHO</th>
-                    <th>NI/C</th>
-                    <th>MARAC.</th>
-                    <th>OUTRO</th>
+                    $ths
                     <th>QTD</th>
                     <th>VALOR</th>
                 </tr>
                 <tr>
                     <td><b>${order.clientName}</b></td>
-                    <td>${if (order.brigadeiro > 0) order.brigadeiro.toString() else ""}</td>
-                    <td>${if (order.pacoca > 0) order.pacoca.toString() else ""}</td>
-                    <td>${if (order.ninho > 0) order.ninho.toString() else ""}</td>
-                    <td>${if (order.ninhoNutella > 0) order.ninhoNutella.toString() else ""}</td>
-                    <td>${if (order.maracuja > 0) order.maracuja.toString() else ""}</td>
-                    <td>${if (order.outro > 0) order.outro.toString() else ""}</td>
+                    $tds
                     <td><b>${order.totalQuantity}</b></td>
                     <td><b>R$ %.2f</b></td>
                 </tr>
@@ -415,11 +414,22 @@ fun printAllSeparationLabels(context: Context, orders: List<OrderModel>) {
     }
 }
 
-fun printSeparationLabel(context: Context, order: OrderModel) {
+fun printSeparationLabel(context: Context, order: OrderModel, allFlavors: List<FlavorModel>) {
     val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
     if (printManager == null) {
         Toast.makeText(context, "Impressão não suportada neste dispositivo", Toast.LENGTH_SHORT).show()
         return
+    }
+
+    val flavorNames = allFlavors.map { it.name }.toMutableList()
+    order.flavorQuantities.keys.forEach { key ->
+        if (!flavorNames.contains(key)) flavorNames.add(key)
+    }
+
+    val ths = flavorNames.joinToString("") { "<th>${it.uppercase()}</th>" }
+    val tds = flavorNames.joinToString("") { flavorName ->
+        val qty = order.flavorQuantities[flavorName] ?: 0
+        "<td>${if (qty > 0) qty.toString() else ""}</td>"
     }
 
     val htmlContent = """
@@ -440,23 +450,13 @@ fun printSeparationLabel(context: Context, order: OrderModel) {
             <table>
                 <tr>
                     <th>NOME</th>
-                    <th>BRIG.</th>
-                    <th>PAÇOCA</th>
-                    <th>NINHO</th>
-                    <th>NI/C</th>
-                    <th>MARAC.</th>
-                    <th>OUTRO</th>
+                    $ths
                     <th>QTD</th>
                     <th>VALOR</th>
                 </tr>
                 <tr>
                     <td><b>${order.clientName}</b></td>
-                    <td>${if (order.brigadeiro > 0) order.brigadeiro.toString() else ""}</td>
-                    <td>${if (order.pacoca > 0) order.pacoca.toString() else ""}</td>
-                    <td>${if (order.ninho > 0) order.ninho.toString() else ""}</td>
-                    <td>${if (order.ninhoNutella > 0) order.ninhoNutella.toString() else ""}</td>
-                    <td>${if (order.maracuja > 0) order.maracuja.toString() else ""}</td>
-                    <td>${if (order.outro > 0) order.outro.toString() else ""}</td>
+                    $tds
                     <td><b>${order.totalQuantity}</b></td>
                     <td><b>R$ %.2f</b></td>
                 </tr>
