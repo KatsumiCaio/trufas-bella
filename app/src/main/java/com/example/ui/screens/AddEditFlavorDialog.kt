@@ -19,10 +19,11 @@ import com.example.data.FlavorModel
 fun AddEditFlavorDialog(
     flavorToEdit: FlavorModel? = null,
     onDismiss: () -> Unit,
-    onSave: (name: String, price: Double, isSpecial: Boolean) -> Unit
+    onSave: (name: String, price: Double, isSpecial: Boolean, abbreviation: String) -> Unit
 ) {
     var name by remember { mutableStateOf(flavorToEdit?.name ?: "") }
     var priceStr by remember { mutableStateOf(flavorToEdit?.price?.toString() ?: "7.0") }
+    var abbreviation by remember { mutableStateOf(flavorToEdit?.abbreviation ?: "") }
     var isSpecial by remember { mutableStateOf(flavorToEdit?.isSpecial ?: false) }
 
     val price = priceStr.toDoubleOrNull() ?: 7.0
@@ -58,6 +59,17 @@ fun AddEditFlavorDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("flavor_name_input")
+                )
+
+                OutlinedTextField(
+                    value = abbreviation,
+                    onValueChange = { abbreviation = it },
+                    label = { Text("Sigla / Abreviação para Etiqueta (ex: BRIG)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("flavor_abbreviation_input")
                 )
 
                 OutlinedTextField(
@@ -99,7 +111,7 @@ fun AddEditFlavorDialog(
                     Button(
                         onClick = {
                             if (name.isNotBlank()) {
-                                onSave(name.trim(), price, isSpecial)
+                                onSave(name.trim(), price, isSpecial, abbreviation.trim().uppercase())
                             }
                         },
                         enabled = name.isNotBlank(),

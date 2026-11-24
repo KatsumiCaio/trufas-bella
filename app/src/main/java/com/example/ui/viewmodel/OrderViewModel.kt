@@ -73,9 +73,9 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addFlavor(name: String, price: Double, isSpecial: Boolean) {
+    fun addFlavor(name: String, price: Double, isSpecial: Boolean, abbreviation: String) {
         viewModelScope.launch {
-            repository.addFlavor(name, price, isSpecial)
+            repository.addFlavor(name, price, isSpecial, abbreviation)
         }
     }
 

@@ -96,12 +96,12 @@ class FirestoreRepository(private val context: Context) {
 
     suspend fun seedDefaultFlavors() {
         val defaults = listOf(
-            FlavorModel(name = "Brigadeiro", price = 7.0, isSpecial = false),
-            FlavorModel(name = "Paçoca", price = 7.0, isSpecial = false),
-            FlavorModel(name = "Ninho", price = 7.0, isSpecial = false),
-            FlavorModel(name = "Ninho c/ Nutella", price = 8.0, isSpecial = true),
-            FlavorModel(name = "Maracujá", price = 7.0, isSpecial = false),
-            FlavorModel(name = "Outro", price = 7.0, isSpecial = false)
+            FlavorModel(name = "Brigadeiro", price = 7.0, isSpecial = false, abbreviation = "BRIG."),
+            FlavorModel(name = "Paçoca", price = 7.0, isSpecial = false, abbreviation = "PAÇ."),
+            FlavorModel(name = "Ninho", price = 7.0, isSpecial = false, abbreviation = "NINHO"),
+            FlavorModel(name = "Ninho c/ Nutella", price = 8.0, isSpecial = true, abbreviation = "NI/C"),
+            FlavorModel(name = "Maracujá", price = 7.0, isSpecial = false, abbreviation = "MARAC."),
+            FlavorModel(name = "Outro", price = 7.0, isSpecial = false, abbreviation = "OUTR")
         )
         val batch = db.batch()
         val colRef = db.collection("shops").document("trufas_bella").collection("flavors")
@@ -120,14 +120,15 @@ class FirestoreRepository(private val context: Context) {
             .await()
     }
 
-    suspend fun addFlavor(name: String, price: Double, isSpecial: Boolean) {
+    suspend fun addFlavor(name: String, price: Double, isSpecial: Boolean, abbreviation: String) {
         val colRef = db.collection("shops").document("trufas_bella").collection("flavors")
         val docRef = colRef.document()
         val flavor = FlavorModel(
             id = docRef.id,
             name = name.trim(),
             price = price,
-            isSpecial = isSpecial
+            isSpecial = isSpecial,
+            abbreviation = abbreviation.trim().uppercase()
         )
         docRef.set(flavor).await()
     }

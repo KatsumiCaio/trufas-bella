@@ -124,11 +124,11 @@ fun FlavorsScreen(
                     showDialog = false
                     flavorToEdit = null
                 },
-                onSave = { name, price, isSpecial ->
+                onSave = { name, price, isSpecial, abbreviation ->
                     if (flavorToEdit == null) {
-                        viewModel.addFlavor(name, price, isSpecial)
+                        viewModel.addFlavor(name, price, isSpecial, abbreviation)
                     } else {
-                        viewModel.updateFlavor(flavorToEdit!!.copy(name = name, price = price, isSpecial = isSpecial))
+                        viewModel.updateFlavor(flavorToEdit!!.copy(name = name, price = price, isSpecial = isSpecial, abbreviation = abbreviation))
                     }
                     showDialog = false
                     flavorToEdit = null
@@ -165,6 +165,20 @@ fun FlavorItemCard(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    if (flavor.abbreviation.isNotBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Text(
+                                text = flavor.abbreviation,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                     if (flavor.isSpecial) {
                         Surface(
                             shape = RoundedCornerShape(6.dp),

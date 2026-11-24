@@ -8,5 +8,6 @@ data class FlavorModel(
     val userId: String = "",
     val name: String = "",
     val price: Double = 7.0,
-    val isSpecial: Boolean = false
+    val isSpecial: Boolean = false,
+    val abbreviation: String = ""
 )
