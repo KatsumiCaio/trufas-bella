@@ -46,20 +46,26 @@ fun OrdersScreen(
 ) {
     val orders by viewModel.allOrders.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    var selectedPeriod by remember { mutableStateOf("Esta Semana") } // "Esta Semana", "Este Mês", "Todas"
+    var selectedMonth by remember { mutableStateOf("Todos") } // "Todos" or "MM/yyyy"
     var selectedWeekFilter by remember { mutableStateOf("Todas") } // "Todas", "Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"
     var selectedStatus by remember { mutableStateOf("Todos") } // "Todos", "Pendentes", "Pagos"
     val context = LocalContext.current
+
+    val availableMonths = remember(orders) {
+        listOf("Todos") + orders.map { it.monthKey }.filter { it.isNotBlank() }.distinct().sortedDescending()
+    }
+
+    LaunchedEffect(availableMonths) {
+        if (!availableMonths.contains(selectedMonth)) {
+            selectedMonth = "Todos"
+        }
+    }
 
     val filteredOrders = orders.filter { order ->
         val matchesSearch = order.clientName.contains(searchQuery, ignoreCase = true) ||
                 order.notes.contains(searchQuery, ignoreCase = true)
         
-        val matchesPeriod = when (selectedPeriod) {
-            "Esta Semana" -> isCurrentWeek(order.dateMillis)
-            "Este Mês" -> isCurrentMonth(order.dateMillis)
-            else -> true
-        }
+        val matchesMonth = if (selectedMonth == "Todos") true else order.monthKey == selectedMonth
 
         val matchesWeek = when (selectedWeekFilter) {
             "Semana 1" -> order.weekOfMonth == 1
@@ -76,15 +82,11 @@ fun OrdersScreen(
             else -> true
         }
 
-        matchesSearch && matchesPeriod && matchesWeek && matchesStatus
+        matchesSearch && matchesMonth && matchesWeek && matchesStatus
     }
 
     val periodWeekFilteredOrders = orders.filter { order ->
-        val matchesPeriod = when (selectedPeriod) {
-            "Esta Semana" -> isCurrentWeek(order.dateMillis)
-            "Este Mês" -> isCurrentMonth(order.dateMillis)
-            else -> true
-        }
+        val matchesMonth = if (selectedMonth == "Todos") true else order.monthKey == selectedMonth
         val matchesWeek = when (selectedWeekFilter) {
             "Semana 1" -> order.weekOfMonth == 1
             "Semana 2" -> order.weekOfMonth == 2
@@ -93,7 +95,7 @@ fun OrdersScreen(
             "Semana 5" -> order.weekOfMonth == 5
             else -> true
         }
-        matchesPeriod && matchesWeek
+        matchesMonth && matchesWeek
     }
 
     val totalRevenue = periodWeekFilteredOrders.sumOf { it.totalPrice }
@@ -194,35 +196,74 @@ fun OrdersScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text("Período:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
-                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    listOf("Esta Semana", "Este Mês", "Todas").forEach { period ->
-                        FilterChip(
-                            selected = selectedPeriod == period,
-                            onClick = { selectedPeriod = period },
-                            label = { Text(period) }
+                    var expandedMonth by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expandedMonth,
+                        onExpandedChange = { expandedMonth = !expandedMonth },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        OutlinedTextField(
+                            value = if (selectedMonth == "Todos") "Todos os Meses" else selectedMonth,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Mês") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMonth) },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
                         )
+                        ExposedDropdownMenu(
+                            expanded = expandedMonth,
+                            onDismissRequest = { expandedMonth = false }
+                        ) {
+                            availableMonths.forEach { month ->
+                                DropdownMenuItem(
+                                    text = { Text(if (month == "Todos") "Todos os Meses" else month) },
+                                    onClick = {
+                                        selectedMonth = month
+                                        expandedMonth = false
+                                    }
+                                )
+                            }
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text("Semana:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    listOf("Todas", "Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5").forEach { week ->
-                        FilterChip(
-                            selected = selectedWeekFilter == week,
-                            onClick = { selectedWeekFilter = week },
-                            label = { Text(week) }
+                    var expandedWeek by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expandedWeek,
+                        onExpandedChange = { expandedWeek = !expandedWeek },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        OutlinedTextField(
+                            value = if (selectedWeekFilter == "Todas") "Todas as Semanas" else selectedWeekFilter,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Semana") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedWeek) },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
                         )
+                        ExposedDropdownMenu(
+                            expanded = expandedWeek,
+                            onDismissRequest = { expandedWeek = false }
+                        ) {
+                            listOf("Todas", "Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5").forEach { week ->
+                                DropdownMenuItem(
+                                    text = { Text(if (week == "Todas") "Todas as Semanas" else week) },
+                                    onClick = {
+                                        selectedWeekFilter = week
+                                        expandedWeek = false
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
 
