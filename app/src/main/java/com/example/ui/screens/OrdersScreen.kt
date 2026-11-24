@@ -47,6 +47,7 @@ fun OrdersScreen(
     val orders by viewModel.allOrders.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var selectedPeriod by remember { mutableStateOf("Esta Semana") } // "Esta Semana", "Este Mês", "Todas"
+    var selectedWeekFilter by remember { mutableStateOf("Todas") } // "Todas", "Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"
     var selectedStatus by remember { mutableStateOf("Todos") } // "Todos", "Pendentes", "Pagos"
     val context = LocalContext.current
 
@@ -60,26 +61,44 @@ fun OrdersScreen(
             else -> true
         }
 
+        val matchesWeek = when (selectedWeekFilter) {
+            "Semana 1" -> order.weekOfMonth == 1
+            "Semana 2" -> order.weekOfMonth == 2
+            "Semana 3" -> order.weekOfMonth == 3
+            "Semana 4" -> order.weekOfMonth == 4
+            "Semana 5" -> order.weekOfMonth == 5
+            else -> true
+        }
+
         val matchesStatus = when (selectedStatus) {
             "Pendentes" -> !order.isPaid
             "Pagos" -> order.isPaid
             else -> true
         }
 
-        matchesSearch && matchesPeriod && matchesStatus
+        matchesSearch && matchesPeriod && matchesWeek && matchesStatus
     }
 
-    val periodFilteredOrders = orders.filter { order ->
-        when (selectedPeriod) {
+    val periodWeekFilteredOrders = orders.filter { order ->
+        val matchesPeriod = when (selectedPeriod) {
             "Esta Semana" -> isCurrentWeek(order.dateMillis)
             "Este Mês" -> isCurrentMonth(order.dateMillis)
             else -> true
         }
+        val matchesWeek = when (selectedWeekFilter) {
+            "Semana 1" -> order.weekOfMonth == 1
+            "Semana 2" -> order.weekOfMonth == 2
+            "Semana 3" -> order.weekOfMonth == 3
+            "Semana 4" -> order.weekOfMonth == 4
+            "Semana 5" -> order.weekOfMonth == 5
+            else -> true
+        }
+        matchesPeriod && matchesWeek
     }
 
-    val totalRevenue = periodFilteredOrders.sumOf { it.totalPrice }
-    val totalTruffles = periodFilteredOrders.sumOf { it.totalQuantity }
-    val pendingCount = periodFilteredOrders.count { !it.isPaid }
+    val totalRevenue = periodWeekFilteredOrders.sumOf { it.totalPrice }
+    val totalTruffles = periodWeekFilteredOrders.sumOf { it.totalQuantity }
+    val pendingCount = periodWeekFilteredOrders.count { !it.isPaid }
 
     Scaffold(
         topBar = {
@@ -186,6 +205,23 @@ fun OrdersScreen(
                             selected = selectedPeriod == period,
                             onClick = { selectedPeriod = period },
                             label = { Text(period) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Semana:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    listOf("Todas", "Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5").forEach { week ->
+                        FilterChip(
+                            selected = selectedWeekFilter == week,
+                            onClick = { selectedWeekFilter = week },
+                            label = { Text(week) }
                         )
                     }
                 }
@@ -301,17 +337,32 @@ fun OrderItemCard(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (order.isPaid) Color(0xFFE8F5E9) else Color(0xFFFFF3E1)
-                ) {
-                    Text(
-                        text = if (order.isPaid) "PAGO (${order.paymentMethod})" else "PENDENTE",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (order.isPaid) Color(0xFF2E7D32) else Color(0xFFE65100),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            text = "Semana ${order.weekOfMonth}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (order.isPaid) Color(0xFFE8F5E9) else Color(0xFFFFF3E1)
+                    ) {
+                        Text(
+                            text = if (order.isPaid) "PAGO (${order.paymentMethod})" else "PENDENTE",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (order.isPaid) Color(0xFF2E7D32) else Color(0xFFE65100),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
 
