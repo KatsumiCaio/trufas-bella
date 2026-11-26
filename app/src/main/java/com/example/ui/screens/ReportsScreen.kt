@@ -26,6 +26,7 @@ import java.util.Locale
 @Composable
 fun ReportsScreen(viewModel: OrderViewModel) {
     val orders by viewModel.allOrders.collectAsState()
+    var selectedPeriod by remember { mutableStateOf("Mensal") } // "Diário", "Semanal", "Mensal"
 
     val totalRevenue = orders.sumOf { it.totalPrice }
     val totalTruffles = orders.sumOf { it.totalQuantity }
@@ -39,18 +40,35 @@ fun ReportsScreen(viewModel: OrderViewModel) {
         }
         .sortedByDescending { it.second }
 
-    // Group orders month by month, summing up weeks of the month
-    val ordersByMonth = orders.groupBy { order ->
-        if (order.monthKey.isNotBlank()) order.monthKey else {
-            val fmt = SimpleDateFormat("MM/yyyy", Locale("pt", "BR"))
-            fmt.format(Date(order.dateMillis))
+    // Period grouping logic
+    val dateFormatDay = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
+    val dateFormatMonth = SimpleDateFormat("MM/yyyy", Locale("pt", "BR"))
+
+    val periodGroupedData = remember(orders, selectedPeriod) {
+        when (selectedPeriod) {
+            "Diário" -> {
+                orders.groupBy { dateFormatDay.format(Date(it.dateMillis)) }
+                    .mapValues { entry -> entry.value.sumOf { it.totalPrice } }
+                    .toSortedMap(compareByDescending { it })
+            }
+            "Semanal" -> {
+                orders.groupBy { "${it.monthKey} - Sem ${it.weekOfMonth}" }
+                    .mapValues { entry -> entry.value.sumOf { it.totalPrice } }
+                    .toSortedMap(compareByDescending { it })
+            }
+            else -> { // Mensal
+                orders.groupBy {
+                    if (it.monthKey.isNotBlank()) it.monthKey else dateFormatMonth.format(Date(it.dateMillis))
+                }.mapValues { entry -> entry.value.sumOf { it.totalPrice } }
+                .toSortedMap(compareByDescending { it })
+            }
         }
-    }.toSortedMap(compareByDescending { it })
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Relatório Mês a Mês & Gráficos", fontWeight = FontWeight.Bold) },
+                title = { Text("Relatórios & Vendas por Período", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -123,7 +141,7 @@ fun ReportsScreen(viewModel: OrderViewModel) {
                 }
             }
 
-            // Month by Month Breakdown (Summing weeks of each month)
+            // Period Selector & Chart Card (Diário / Semanal / Mensal)
             item {
                 Card(
                     shape = RoundedCornerShape(20.dp),
@@ -137,66 +155,60 @@ fun ReportsScreen(viewModel: OrderViewModel) {
                             .padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Relatório Mês a Mês (por Semanas)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Vendas por Período", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
                         }
 
-                        if (ordersByMonth.isEmpty()) {
-                            Text("Nenhum pedido registrado para relatórios.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
-                        } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                ordersByMonth.forEach { (monthKey, monthOrders) ->
-                                    val monthRevenue = monthOrders.sumOf { it.totalPrice }
-                                    val monthTruffles = monthOrders.sumOf { it.totalQuantity }
-                                    val weeksGrouped = monthOrders.groupBy { it.weekOfMonth }.toSortedMap()
+                        // Period Filter Chips
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf("Diário", "Semanal", "Mensal").forEach { period ->
+                                FilterChip(
+                                    selected = selectedPeriod == period,
+                                    onClick = { selectedPeriod = period },
+                                    label = { Text(period) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
 
-                                    Card(
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Column(
+                        Divider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                        if (periodGroupedData.isEmpty()) {
+                            Text("Nenhum dado de vendas para o período selecionado.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+                        } else {
+                            val maxPeriodValue = periodGroupedData.values.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
+
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                periodGroupedData.forEach { (label, revenue) ->
+                                    val fraction = (revenue / maxPeriodValue).toFloat().coerceIn(0.05f, 1f)
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                            Text("R$ %.2f".format(revenue), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        }
+                                        LinearProgressIndicator(
+                                            progress = { fraction },
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(14.dp),
-                                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text("Mês: $monthKey", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                                Text("R$ %.2f ($monthTruffles und)".format(monthRevenue), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold)
-                                            }
-
-                                            Divider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                                            weeksGrouped.forEach { (weekNum, weekOrders) ->
-                                                val weekRevenue = weekOrders.sumOf { it.totalPrice }
-                                                val weekTruffles = weekOrders.sumOf { it.totalQuantity }
-
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-                                                        .padding(10.dp),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Column {
-                                                        Text("Semana $weekNum", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                                                        Text("${weekOrders.size} encomendas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                                                    }
-                                                    Column(horizontalAlignment = Alignment.End) {
-                                                        Text("R$ %.2f".format(weekRevenue), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                                        Text("$weekTruffles trufas", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                    }
-                                                }
-                                            }
-                                        }
+                                                .height(14.dp)
+                                                .clip(RoundedCornerShape(7.dp)),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            trackColor = MaterialTheme.colorScheme.outlineVariant
+                                        )
                                     }
                                 }
                             }
