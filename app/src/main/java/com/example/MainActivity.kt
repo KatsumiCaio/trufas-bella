@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -20,7 +19,6 @@ import androidx.compose.ui.Modifier
 import com.example.data.OrderModel
 import com.example.ui.screens.AddEditOrderDialog
 import com.example.ui.screens.AuthScreen
-import com.example.ui.screens.CurrentOrdersScreen
 import com.example.ui.screens.FlavorsScreen
 import com.example.ui.screens.OrdersScreen
 import com.example.ui.screens.ReceiptsScreen
@@ -58,8 +56,8 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = selectedTab == 0,
                                     onClick = { selectedTab = 0 },
-                                    icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Atuais") },
-                                    label = { Text("Atuais") }
+                                    icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Pedidos") },
+                                    label = { Text("Pedidos") }
                                 )
                                 NavigationBarItem(
                                     selected = selectedTab == 1,
@@ -70,24 +68,18 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = selectedTab == 2,
                                     onClick = { selectedTab = 2 },
-                                    icon = { Icon(Icons.Default.ListAlt, contentDescription = "Histórico") },
-                                    label = { Text("Histórico") }
-                                )
-                                NavigationBarItem(
-                                    selected = selectedTab == 3,
-                                    onClick = { selectedTab = 3 },
                                     icon = { Icon(Icons.Default.Category, contentDescription = "Sabores") },
                                     label = { Text("Sabores") }
                                 )
                                 NavigationBarItem(
-                                    selected = selectedTab == 4,
-                                    onClick = { selectedTab = 4 },
+                                    selected = selectedTab == 3,
+                                    onClick = { selectedTab = 3 },
                                     icon = { Icon(Icons.Default.Receipt, contentDescription = "Recibos") },
                                     label = { Text("Recibos") }
                                 )
                                 NavigationBarItem(
-                                    selected = selectedTab == 5,
-                                    onClick = { selectedTab = 5 },
+                                    selected = selectedTab == 4,
+                                    onClick = { selectedTab = 4 },
                                     icon = { Icon(Icons.Default.BarChart, contentDescription = "Relatórios") },
                                     label = { Text("Relatórios") }
                                 )
@@ -101,7 +93,7 @@ class MainActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.background
                         ) {
                             when (selectedTab) {
-                                0 -> CurrentOrdersScreen(
+                                0 -> OrdersScreen(
                                     viewModel = viewModel,
                                     onAddNewClick = {
                                         orderToEdit = null
@@ -113,20 +105,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                                 1 -> WeeklySummaryScreen(viewModel = viewModel)
-                                2 -> OrdersScreen(
-                                    viewModel = viewModel,
-                                    onAddNewClick = {
-                                        orderToEdit = null
-                                        showAddDialog = true
-                                    },
-                                    onEditOrder = { order ->
-                                        orderToEdit = order
-                                        showAddDialog = true
-                                    }
-                                )
-                                3 -> FlavorsScreen(viewModel = viewModel)
-                                4 -> ReceiptsScreen(viewModel = viewModel)
-                                5 -> ReportsScreen(viewModel = viewModel)
+                                2 -> FlavorsScreen(viewModel = viewModel)
+                                3 -> ReceiptsScreen(viewModel = viewModel)
+                                4 -> ReportsScreen(viewModel = viewModel)
                             }
                         }
 
