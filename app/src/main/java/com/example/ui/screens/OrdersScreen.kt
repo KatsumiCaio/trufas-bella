@@ -18,7 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import com.example.data.OrderModel
 import com.example.ui.viewmodel.OrderViewModel
@@ -46,19 +48,22 @@ fun OrdersScreen(
 ) {
     val orders by viewModel.allOrders.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-    var selectedMonth by remember { mutableStateOf("Todos") } // "Todos" or "MM/yyyy"
-    var selectedWeekFilter by remember { mutableStateOf("Todas") } // "Todas", "Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"
+    val currentMonthKey = remember {
+        SimpleDateFormat("MM/yyyy", Locale("pt", "BR")).format(Date())
+    }
+    val currentWeekNum = remember {
+        val cal = Calendar.getInstance(Locale("pt", "BR"))
+        cal.get(Calendar.WEEK_OF_MONTH)
+    }
+
+    var selectedMonth by remember { mutableStateOf(currentMonthKey) } // "Todos" or "MM/yyyy"
+    var selectedWeekFilter by remember { mutableStateOf("Semana $currentWeekNum") } // "Todas", "Semana 1", etc.
     var selectedStatus by remember { mutableStateOf("Todos") } // "Todos", "Pendentes", "Pagos"
     val context = LocalContext.current
 
     val availableMonths = remember(orders) {
-        listOf("Todos") + orders.map { it.monthKey }.filter { it.isNotBlank() }.distinct().sortedDescending()
-    }
-
-    LaunchedEffect(availableMonths) {
-        if (!availableMonths.contains(selectedMonth)) {
-            selectedMonth = "Todos"
-        }
+        val list = orders.map { it.monthKey }.filter { it.isNotBlank() }.distinct().sortedDescending()
+        listOf("Todos") + if (!list.contains(currentMonthKey)) listOf(currentMonthKey) + list else list
     }
 
     val filteredOrders = orders.filter { order ->

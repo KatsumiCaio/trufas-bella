@@ -8,8 +8,10 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -18,10 +20,12 @@ import androidx.compose.ui.Modifier
 import com.example.data.OrderModel
 import com.example.ui.screens.AddEditOrderDialog
 import com.example.ui.screens.AuthScreen
+import com.example.ui.screens.CurrentOrdersScreen
 import com.example.ui.screens.FlavorsScreen
 import com.example.ui.screens.OrdersScreen
 import com.example.ui.screens.ReceiptsScreen
 import com.example.ui.screens.ReportsScreen
+import com.example.ui.screens.WeeklySummaryScreen
 import com.example.ui.theme.TrufasBellaTheme
 import com.example.ui.viewmodel.OrderViewModel
 
@@ -54,24 +58,36 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = selectedTab == 0,
                                     onClick = { selectedTab = 0 },
-                                    icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Pedidos") },
-                                    label = { Text("Pedidos") }
+                                    icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Atuais") },
+                                    label = { Text("Atuais") }
                                 )
                                 NavigationBarItem(
                                     selected = selectedTab == 1,
                                     onClick = { selectedTab = 1 },
-                                    icon = { Icon(Icons.Default.Category, contentDescription = "Sabores") },
-                                    label = { Text("Sabores") }
+                                    icon = { Icon(Icons.Default.Assignment, contentDescription = "Resumo") },
+                                    label = { Text("Resumo") }
                                 )
                                 NavigationBarItem(
                                     selected = selectedTab == 2,
                                     onClick = { selectedTab = 2 },
-                                    icon = { Icon(Icons.Default.Receipt, contentDescription = "Recibos") },
-                                    label = { Text("Recibos") }
+                                    icon = { Icon(Icons.Default.ListAlt, contentDescription = "Histórico") },
+                                    label = { Text("Histórico") }
                                 )
                                 NavigationBarItem(
                                     selected = selectedTab == 3,
                                     onClick = { selectedTab = 3 },
+                                    icon = { Icon(Icons.Default.Category, contentDescription = "Sabores") },
+                                    label = { Text("Sabores") }
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == 4,
+                                    onClick = { selectedTab = 4 },
+                                    icon = { Icon(Icons.Default.Receipt, contentDescription = "Recibos") },
+                                    label = { Text("Recibos") }
+                                )
+                                NavigationBarItem(
+                                    selected = selectedTab == 5,
+                                    onClick = { selectedTab = 5 },
                                     icon = { Icon(Icons.Default.BarChart, contentDescription = "Relatórios") },
                                     label = { Text("Relatórios") }
                                 )
@@ -85,7 +101,7 @@ class MainActivity : ComponentActivity() {
                             color = MaterialTheme.colorScheme.background
                         ) {
                             when (selectedTab) {
-                                0 -> OrdersScreen(
+                                0 -> CurrentOrdersScreen(
                                     viewModel = viewModel,
                                     onAddNewClick = {
                                         orderToEdit = null
@@ -96,9 +112,21 @@ class MainActivity : ComponentActivity() {
                                         showAddDialog = true
                                     }
                                 )
-                                1 -> FlavorsScreen(viewModel = viewModel)
-                                2 -> ReceiptsScreen(viewModel = viewModel)
-                                3 -> ReportsScreen(viewModel = viewModel)
+                                1 -> WeeklySummaryScreen(viewModel = viewModel)
+                                2 -> OrdersScreen(
+                                    viewModel = viewModel,
+                                    onAddNewClick = {
+                                        orderToEdit = null
+                                        showAddDialog = true
+                                    },
+                                    onEditOrder = { order ->
+                                        orderToEdit = order
+                                        showAddDialog = true
+                                    }
+                                )
+                                3 -> FlavorsScreen(viewModel = viewModel)
+                                4 -> ReceiptsScreen(viewModel = viewModel)
+                                5 -> ReportsScreen(viewModel = viewModel)
                             }
                         }
 
